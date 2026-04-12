@@ -1,0 +1,150 @@
+{
+  "folderUrl": "https://drive.google.com/drive/folders/1U2_lMcMB8IxVL-1HVIHtF8N9FarJ18aL",
+  "generated": "2024-01-15T00:00:00Z",
+  "catalogs": [
+    {
+      "id": "spring-summer-2024",
+      "title": "Spring / Summer 2024",
+      "subtitle": "Collection Highlights",
+      "category": "Seasonal",
+      "date": "2024-03",
+      "driveFileId": "sample_1",
+      "coverImage": "covers/spring-summer-2024.jpg",
+      "pageCount": 48,
+      "featured": true,
+      "color": "#e8c8a0"
+    },
+    {
+      "id": "contemporary-photography-2023",
+      "title": "Contemporary Photography",
+      "subtitle": "New Acquisitions 2023",
+      "category": "Photography",
+      "date": "2023-11",
+      "driveFileId": "sample_2",
+      "coverImage": "covers/contemporary-photography-2023.jpg",
+      "pageCount": 64,
+      "featured": false,
+      "color": "#8a9ba8"
+    },
+    {
+      "id": "abstract-expressionism",
+      "title": "Abstract Expressionism",
+      "subtitle": "The Collection: Works on Paper",
+      "category": "Painting",
+      "date": "2023-09",
+      "driveFileId": "sample_3",
+      "coverImage": "covers/abstract-expressionism.jpg",
+      "pageCount": 56,
+      "featured": false,
+      "color": "#c4a0b0"
+    },
+    {
+      "id": "design-architecture-annual",
+      "title": "Design & Architecture Annual",
+      "subtitle": "2023 Edition",
+      "category": "Design",
+      "date": "2023-12",
+      "driveFileId": "sample_4",
+      "coverImage": "covers/design-architecture-annual.jpg",
+      "pageCount": 80,
+      "featured": false,
+      "color": "#a8b8a0"
+    },
+    {
+      "id": "modern-sculpture-2023",
+      "title": "Modern Sculpture",
+      "subtitle": "Form, Space, and Material",
+      "category": "Sculpture",
+      "date": "2023-06",
+      "driveFileId": "sample_5",
+      "coverImage": "covers/modern-sculpture-2023.jpg",
+      "pageCount": 40,
+      "featured": false,
+      "color": "#b0a898"
+    },
+    {
+      "id": "fall-winter-2023",
+      "title": "Fall / Winter 2023",
+      "subtitle": "Collection Highlights",
+      "category": "Seasonal",
+      "date": "2023-09",
+      "driveFileId": "sample_6",
+      "coverImage": "covers/fall-winter-2023.jpg",
+      "pageCount": 52,
+      "featured": false,
+      "color": "#c8b090"
+    },
+    {
+      "id": "textile-arts-craft",
+      "title": "Textile Arts & Craft",
+      "subtitle": "Threads of Time",
+      "category": "Craft",
+      "date": "2023-04",
+      "driveFileId": "sample_7",
+      "coverImage": "covers/textile-arts-craft.jpg",
+      "pageCount": 36,
+      "featured": false,
+      "color": "#d4b896"
+    },
+    {
+      "id": "digital-frontiers-2023",
+      "title": "Digital Frontiers",
+      "subtitle": "New Media and Technology Art",
+      "category": "Digital Art",
+      "date": "2023-07",
+      "driveFileId": "sample_8",
+      "coverImage": "covers/digital-frontiers-2023.jpg",
+      "pageCount": 44,
+      "featured": false,
+      "color": "#8090a8"
+    },
+    {
+      "id": "classical-drawings",
+      "title": "Classical Drawings",
+      "subtitle": "Old Masters and Their Legacy",
+      "category": "Drawing",
+      "date": "2023-02",
+      "driveFileId": "sample_9",
+      "coverImage": "covers/classical-drawings.jpg",
+      "pageCount": 60,
+      "featured": false,
+      "color": "#e0d4c0"
+    },
+    {
+      "id": "color-theory-practice",
+      "title": "Color Theory in Practice",
+      "subtitle": "A Survey of Chromatic Expression",
+      "category": "Theory",
+      "date": "2022-11",
+      "driveFileId": "sample_10",
+      "coverImage": "covers/color-theory-practice.jpg",
+      "pageCount": 32,
+      "featured": false,
+      "color": "#a4a4b4"
+    },
+    {
+      "id": "the-collection-2024",
+      "title": "The Collection: 2024",
+      "subtitle": "Annual Museum Survey",
+      "category": "Collection",
+      "date": "2024-01",
+      "driveFileId": "sample_11",
+      "coverImage": "covers/the-collection-2024.jpg",
+      "pageCount": 96,
+      "featured": false,
+      "color": "#c0b0a0"
+    },
+    {
+      "id": "spring-summer-2023",
+      "title": "Spring / Summer 2023",
+      "subtitle": "Collection Highlights",
+      "category": "Seasonal",
+      "date": "2023-03",
+      "driveFileId": "sample_12",
+      "coverImage": "covers/spring-summer-2023.jpg",
+      "pageCount": 44,
+      "featured": false,
+      "color": "#d0c8a8"
+    }
+  ]
+}

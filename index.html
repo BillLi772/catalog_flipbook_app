@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catalog Library</title>
+  <meta name="description" content="Browse our collection of exhibition and seasonal catalogs">
+
+  <!-- Google Fonts: Libre Franklin -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&display=swap" rel="stylesheet">
+
+  <!-- PDF.js -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Site Header -->
+  <header id="site-header" role="banner">
+    <div class="header-inner">
+      <a href="/" class="site-title" id="site-title-link" aria-label="Catalog Library Home">
+        Catalog
+      </a>
+      <nav class="site-nav" aria-label="Main navigation">
+        <button class="nav-link nav-link--active" data-filter="all">All</button>
+        <button class="nav-link" data-filter="Seasonal">Seasonal</button>
+        <button class="nav-link" data-filter="Photography">Photography</button>
+        <button class="nav-link" data-filter="Painting">Painting</button>
+        <button class="nav-link" data-filter="Design">Design</button>
+        <button class="nav-link" data-filter="Sculpture">Sculpture</button>
+      </nav>
+      <div class="header-actions">
+        <label for="search-input" class="sr-only">Search catalogs</label>
+        <input
+          type="search"
+          id="search-input"
+          class="search-input"
+          placeholder="Search..."
+          aria-label="Search catalogs"
+          autocomplete="off"
+        >
+        <select id="sort-select" class="sort-select" aria-label="Sort catalogs">
+          <option value="date-desc">Newest first</option>
+          <option value="date-asc">Oldest first</option>
+          <option value="alpha">A–Z</option>
+          <option value="category">By category</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main App Container -->
+  <main id="app" role="main" tabindex="-1">
+    <!-- Library View -->
+    <section id="library-view" aria-label="Catalog library">
+      <div id="loading-state" class="loading-state" aria-live="polite" role="status">
+        <div class="loading-dots" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </div>
+        <p>Loading catalogs…</p>
+      </div>
+      <div id="library-content" hidden>
+        <div id="hero-section" class="hero-section"></div>
+        <div id="catalog-grid" class="catalog-grid" role="list" aria-label="Catalog list"></div>
+        <div id="no-results" class="no-results" hidden>
+          <p>No catalogs match your search.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Reader View -->
+    <section id="reader-view" aria-label="Catalog reader" hidden>
+      <!-- Reader Header -->
+      <div class="reader-header" id="reader-header">
+        <button class="reader-back" id="reader-back" aria-label="Back to library">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Library</span>
+        </button>
+        <h1 class="reader-title" id="reader-title"></h1>
+        <div class="reader-page-indicator" id="reader-page-indicator" aria-live="polite"></div>
+      </div>
+
+      <!-- Reading Progress Bar -->
+      <div id="reading-progress" class="reading-progress" role="progressbar"
+           aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+
+      <!-- Book Viewport -->
+      <div class="reader-stage" id="reader-stage">
+        <div class="reader-book-viewport" id="book-viewport">
+          <div class="reader-book" id="reader-book">
+            <!-- Left page -->
+            <div class="book-page book-page-left" id="book-page-left">
+              <canvas id="canvas-left" aria-label="Left page"></canvas>
+              <div class="page-blank" id="page-blank-left" aria-hidden="true"></div>
+            </div>
+            <!-- Spine -->
+            <div class="book-spine" aria-hidden="true"></div>
+            <!-- Right page -->
+            <div class="book-page book-page-right" id="book-page-right">
+              <canvas id="canvas-right" aria-label="Right page"></canvas>
+              <div class="page-blank" id="page-blank-right" aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Click zones -->
+        <button class="reader-click-zone reader-click-prev" id="click-prev" aria-label="Previous page"></button>
+        <button class="reader-click-zone reader-click-next" id="click-next" aria-label="Next page"></button>
+      </div>
+
+      <!-- Bottom Toolbar -->
+      <div class="reader-toolbar" id="reader-toolbar" role="toolbar" aria-label="Reader controls">
+        <div class="toolbar-inner">
+          <div class="toolbar-left">
+            <button class="toolbar-btn" id="btn-prev" aria-label="Previous page">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <path d="M11 4L6 9L11 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <button class="toolbar-btn" id="btn-next" aria-label="Next page">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <path d="M7 4L12 9L7 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="toolbar-center">
+            <input type="range" id="page-scrubber" class="page-scrubber"
+                   min="1" max="1" value="1" aria-label="Page position">
+          </div>
+
+          <div class="toolbar-right">
+            <button class="toolbar-btn" id="btn-zoom-out" aria-label="Zoom out">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M5.5 8H10.5M13 13L16 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <button class="toolbar-btn" id="btn-zoom-in" aria-label="Zoom in">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M8 5.5V10.5M5.5 8H10.5M13 13L16 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <button class="toolbar-btn" id="btn-thumbnails" aria-label="Toggle thumbnails" aria-pressed="false">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <rect x="2" y="2" width="5" height="6" rx="0.5" stroke="currentColor" stroke-width="1.5"/>
+                <rect x="2" y="10" width="5" height="6" rx="0.5" stroke="currentColor" stroke-width="1.5"/>
+                <rect x="11" y="2" width="5" height="6" rx="0.5" stroke="currentColor" stroke-width="1.5"/>
+                <rect x="11" y="10" width="5" height="6" rx="0.5" stroke="currentColor" stroke-width="1.5"/>
+              </svg>
+            </button>
+            <button class="toolbar-btn" id="btn-fullscreen" aria-label="Toggle fullscreen">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true" id="icon-fullscreen-enter">
+                <path d="M2 6V2H6M12 2H16V6M16 12V16H12M6 16H2V12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true" id="icon-fullscreen-exit" hidden>
+                <path d="M6 2V6H2M12 6V2H16M16 12H12V16M2 12H6V16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <a class="toolbar-btn toolbar-download" id="btn-download" aria-label="Download PDF" download>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <path d="M9 2V12M5 8L9 12L13 8M3 15H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+            <button class="toolbar-btn toolbar-help" id="btn-shortcuts" aria-label="Keyboard shortcuts (?)">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M7 7C7 5.9 7.9 5 9 5C10.1 5 11 5.9 11 7C11 8.1 10 8.5 9 9.5V10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <circle cx="9" cy="13" r="0.75" fill="currentColor"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Thumbnail Sidebar -->
+      <aside class="reader-thumbnails" id="reader-thumbnails" aria-label="Page thumbnails" hidden>
+        <div class="thumbnails-list" id="thumbnails-list" role="list"></div>
+      </aside>
+
+      <!-- Related catalogs (shown at end) -->
+      <div class="related-catalogs" id="related-catalogs" hidden>
+        <h2 class="related-title">More Catalogs</h2>
+        <div class="related-grid" id="related-grid"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Keyboard Shortcuts Overlay -->
+  <div id="shortcuts-overlay" class="shortcuts-overlay" role="dialog" aria-modal="true"
+       aria-label="Keyboard shortcuts" hidden>
+    <div class="shortcuts-backdrop"></div>
+    <div class="shortcuts-content">
+      <button class="shortcuts-close" id="shortcuts-close" aria-label="Close keyboard shortcuts">×</button>
+      <h2 class="shortcuts-heading">Keyboard Shortcuts</h2>
+      <dl class="shortcuts-list">
+        <div class="shortcut-row"><dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Previous / Next page</dd></div>
+        <div class="shortcut-row"><dt><kbd>Home</kbd></dt><dd>First page</dd></div>
+        <div class="shortcut-row"><dt><kbd>End</kbd></dt><dd>Last page</dd></div>
+        <div class="shortcut-row"><dt><kbd>F</kbd></dt><dd>Toggle fullscreen</dd></div>
+        <div class="shortcut-row"><dt><kbd>T</kbd></dt><dd>Toggle thumbnails</dd></div>
+        <div class="shortcut-row"><dt><kbd>+</kbd> <kbd>-</kbd></dt><dd>Zoom in / out</dd></div>
+        <div class="shortcut-row"><dt><kbd>Esc</kbd></dt><dd>Close reader / overlay</dd></div>
+        <div class="shortcut-row"><dt><kbd>?</kbd></dt><dd>Show / hide shortcuts</dd></div>
+      </dl>
+    </div>
+  </div>
+
+  <script>
+    // PDF.js worker
+    if (typeof pdfjsLib !== 'undefined') {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+    }
+    // Configuration — update WORKER_URL to your deployed Cloudflare Worker
+    window.APP_CONFIG = {
+      workerUrl: 'https://your-worker.workers.dev',
+      driveFolderId: '1U2_lMcMB8IxVL-1HVIHtF8N9FarJ18aL',
+    };
+  </script>
+  <script src="js/pdf-renderer.js"></script>
+  <script src="js/library.js"></script>
+  <script src="js/reader.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

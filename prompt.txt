@@ -1,0 +1,175 @@
+Build a catalog flipbook web application styled after MoMA's exhibitions page (moma.org/calendar/exhibitions). This will host ~200 PDF catalogs stored on Google Drive, with an Issuu-style page-flip reader.
+
+Google Drive folder: https://drive.google.com/drive/folders/1U2_lMcMB8IxVL-1HVIHtF8N9FarJ18aL
+
+## DESIGN SYSTEM — MoMA-inspired
+
+The entire app should feel like a MoMA digital experience. Study these design principles closely:
+
+**Typography:**
+- Use "Libre Franklin" from Google Fonts as the primary typeface (closest freely available match to MoMA Sans / Franklin Gothic)
+- Bold weight is the primary typographic voice — use it for headings, navigation, and emphasis
+- Tight letter-spacing (-0.01em to -0.02em) on headings
+- Left-aligned text throughout (never centered except for rare decorative moments)
+- Type hierarchy: exhibition titles large and bold, metadata (dates, categories) in regular weight, smaller size
+- Clean, quiet, informational — type should support the artwork, not compete with it
+
+**Layout & Grid:**
+- 12-column grid system
+- The catalog library page should mirror MoMA's exhibitions listing:
+  - Large hero/featured catalog at top (full-width or 2/3 width with bold title overlay)
+  - Below: a clean vertical list or grid of catalogs, each as a card with:
+    - Large cover image (cropped for effect, not necessarily full aspect ratio)
+    - Bold title
+    - Subtitle/artist/date in regular weight below
+    - Category tag (small, understated)
+  - Cards should have generous whitespace between them
+  - On desktop: 2-3 column grid of cards; on mobile: single column stack
+- Minimal UI chrome — no heavy borders, no shadows, no rounded corners
+- White background (#ffffff), black text (#000000), with occasional accent color (MoMA uses a rotating seasonal palette — pick one accent like #0078d4 or #d4002a for interactive elements)
+
+**Visual Language:**
+- Full-bleed or dramatically cropped cover images
+- Hover states: subtle opacity change or a thin underline appearing on titles
+- Transitions: smooth, understated (200-300ms ease)
+- No gradients, no glossy effects, no skeuomorphism
+- Photography/artwork should be the hero — UI recedes
+
+**Navigation:**
+- Top bar: left-aligned site title in bold, minimal nav links (All, By Category, Search)
+- Sticky but slim header
+- Filter/search: clean text input, no heavy borders — just a bottom line or light gray background
+- Category filters as plain text links or minimal pills, not chunky buttons
+
+## CATALOG LIBRARY PAGE
+
+- On load, read `catalogs.json` manifest file
+- Display catalogs in the MoMA exhibitions grid style described above
+- Support filtering by category and free-text search (title, artist)
+- Sort options: newest first, alphabetical, by category
+- Lazy-load cover images with a subtle fade-in
+- Clicking a catalog card navigates to the flipbook reader (SPA-style with History API)
+- URL structure: `/` for library, `/catalog/{slug}` for reader, `/catalog/{slug}/page/{n}` for deep links
+
+## FLIPBOOK READER
+
+When a catalog is opened:
+
+**Page rendering:**
+- Use PDF.js to fetch the PDF from Google Drive and render pages to canvas
+- Lazy-load: render current spread + 2 pages ahead/behind
+- Cache rendered pages in memory
+
+**Issuu-style page flip animation:**
+- Realistic 3D page turn effect using CSS 3D transforms:
+  - `perspective(2000px)` on the book container
+  - Page rotates on Y-axis from 0deg to -180deg around the spine
+  - During flip: the turning page has a subtle gradient shadow (simulating paper curl and light)
+  - The back of the turning page shows the next page content (use backface-visibility and a mirrored canvas)
+  - Slight page bend effect using a skew or curved shadow overlay
+  - Easing: `cubic-bezier(0.645, 0.045, 0.355, 1.0)` for natural paper feel
+  - Duration: ~600ms
+- Double-page spread on desktop (side-by-side pages like an open book)
+- Single-page mode on mobile/narrow screens
+- Interaction: click left/right halves, swipe on touch, arrow keys, scrollwheel
+
+**Reader UI (MoMA-styled, minimal):**
+- Top bar: back arrow + catalog title (bold, left-aligned), page indicator "Page 5 of 32" (right-aligned, regular weight)
+- Bottom toolbar (appears on hover/tap, auto-hides):
+  - Page scrubber/slider (thin, minimal)
+  - Thumbnail strip toggle
+  - Zoom controls (+/-)
+  - Fullscreen toggle
+  - Download PDF button
+- Thumbnail sidebar: vertical strip of small page thumbnails, scrollable, highlights current page
+- Background: dark gray (#1a1a1a) or near-black to let the catalog pages pop (like Issuu's reader)
+
+## GOOGLE DRIVE INTEGRATION
+
+- PDFs are in the shared folder: https://drive.google.com/drive/folders/1U2_lMcMB8IxVL-1HVIHtF8N9FarJ18aL
+- Build a Node.js utility script (`scripts/build-catalog.js`) that:
+  - Takes the Google Drive folder ID
+  - Uses the Google Drive API (or scrapes the folder listing) to enumerate all PDFs
+  - For each PDF: extracts the filename, generates a slug, and records the Drive file ID
+  - Outputs `catalogs.json` with the structure:
+    {
+      "catalogs": [
+        {
+          "id": "spring-2024-collection",
+          "title": "Spring 2024 Collection",
+          "category": "Seasonal",
+          "date": "2024-03",
+          "driveFileId": "1AbCdEfGhIjKlMnOpQrStUvWxYz",
+          "coverImage": "covers/spring-2024-collection.jpg",
+          "pageCount": 32
+        }
+      ]
+    }
+- To fetch PDFs client-side, use a Cloudflare Worker proxy (since Google Drive blocks direct CORS requests):
+  - Create a `worker/` directory with a simple Cloudflare Worker that:
+    - Accepts `?id=DRIVE_FILE_ID`
+    - Fetches `https://drive.google.com/uc?export=download&id={id}`
+    - Returns the PDF bytes with proper CORS headers
+  - Include deployment instructions in the README
+- As a fallback: also support Google's embedded viewer via iframe for degraded experience
+
+## COVER IMAGE GENERATION
+
+- Build a script (`scripts/generate-covers.js`) that:
+  - For each PDF in the manifest, downloads it, renders page 1 using pdf.js (via Node canvas)
+  - Saves a JPEG thumbnail (800px wide) to `covers/` directory
+  - This runs at build time, not runtime
+
+## TECH STACK
+
+- Vanilla JS (no framework) or lightweight — keep it fast and simple
+- PDF.js for rendering
+- Static site, deployable to Cloudflare Pages
+- No build step required for the main site (optional Node scripts for catalog building)
+- CSS custom properties for the design system tokens
+
+## FILE STRUCTURE
+
+project/
+├── index.html
+├── css/
+│   └── style.css          # All styles, MoMA design tokens as CSS vars
+├── js/
+│   ├── app.js             # Router, state management
+│   ├── library.js         # Catalog grid, search, filters
+│   ├── reader.js          # Flipbook viewer, page flip animation
+│   └── pdf-renderer.js    # PDF.js wrapper, page caching
+├── catalogs.json          # Catalog manifest
+├── covers/                # Generated cover thumbnails
+├── worker/
+│   └── proxy.js           # Cloudflare Worker for CORS proxy
+├── scripts/
+│   ├── build-catalog.js   # Enumerate Drive folder → catalogs.json
+│   └── generate-covers.js # Render page 1 of each PDF → cover JPEGs
+└── README.md              # Setup, adding catalogs, deployment guide
+
+## PERFORMANCE
+
+- Intersection Observer for lazy-loading cover images in library
+- Only render visible + adjacent pages in the reader
+- Preload the next 2 pages while user is reading
+- Use requestAnimationFrame for flip animations
+- Cache PDF page renders in an off-screen canvas pool (limit ~20 cached pages)
+- Service worker for offline caching of the app shell (stretch goal)
+
+## ACCESSIBILITY
+
+- Semantic HTML: nav, main, article, section
+- ARIA labels on interactive controls
+- Keyboard navigation: Tab through controls, Enter to open catalogs, Escape to close reader
+- Prefers-reduced-motion: disable flip animation, use simple crossfade instead
+- Alt text on cover images (catalog title)
+
+## STRETCH GOALS (implement if straightforward)
+
+- Deep linking: share URL to specific catalog + page
+- Keyboard shortcut overlay (press '?' to see)
+- Reading progress indicator
+- "Related catalogs" suggestion at the end of a catalog
+- Print current page / download current page as image
+- Dark/light mode toggle (dark for reader, light for library — or user preference)
