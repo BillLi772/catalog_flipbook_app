@@ -100,9 +100,11 @@ const Library = (() => {
     card.addEventListener('keydown', e => {
       if (e.key === 'Enter' || e.key === ' ') App.navigate(`/catalog/${featured.id}`);
     });
-    // Render PDF cover for hero
-    const wrap = _heroEl.querySelector('.hero-image-wrap[data-drive-id]');
-    if (wrap && _imageObserver) _imageObserver.observe(wrap);
+    const heroImg = _heroEl.querySelector('.cover-img');
+    if (heroImg) {
+      if (heroImg.complete) heroImg.classList.add('loaded');
+      else heroImg.addEventListener('load', () => heroImg.classList.add('loaded'));
+    }
   }
 
   function _renderGrid(sorted) {
@@ -126,12 +128,11 @@ const Library = (() => {
       });
     });
 
-    // Observe card wraps for PDF cover rendering
-    if (_imageObserver) {
-      _gridEl.querySelectorAll('.card-image-wrap[data-drive-id]').forEach(wrap => {
-        _imageObserver.observe(wrap);
-      });
-    }
+    // Fade in cover images when they load
+    _gridEl.querySelectorAll('.cover-img').forEach(img => {
+      if (img.complete) { img.classList.add('loaded'); }
+      else { img.addEventListener('load', () => img.classList.add('loaded')); }
+    });
   }
 
   function _updateCount(n) {
@@ -154,12 +155,14 @@ const Library = (() => {
   function _heroCardHTML(c) {
     const color = c.color || '#e0dbd4';
     const hasDriveId = c.driveFileId && !c.driveFileId.startsWith('sample_');
+    const thumb = hasDriveId ? _thumbUrl(c.driveFileId) : null;
     return `
       <article class="hero-card" tabindex="0" role="button" aria-label="Open ${_esc(c.title)}">
-        <div class="hero-image-wrap" ${hasDriveId ? `data-drive-id="${_esc(c.driveFileId)}" data-catalog-id="${_esc(c.id)}"` : ''}>
+        <div class="hero-image-wrap">
           <div class="hero-cover-placeholder" style="background-color:${_esc(color)}">
             <span class="placeholder-title">${_esc(c.title)}</span>
           </div>
+          ${thumb ? `<img class="cover-img" src="${_esc(thumb)}" alt="" aria-hidden="true">` : ''}
         </div>
         <div class="hero-info">
           <div class="hero-category">${_esc(c.category)}</div>
@@ -174,16 +177,25 @@ const Library = (() => {
       </article>`;
   }
 
+  function _thumbUrl(driveFileId) {
+    const cfg = window.APP_CONFIG || {};
+    const workerUrl = cfg.workerUrl || '';
+    if (!workerUrl || workerUrl.includes('your-worker')) return null;
+    return `${workerUrl}?thumbnail=${encodeURIComponent(driveFileId)}`;
+  }
+
   function _cardHTML(c, index) {
     const color = c.color || '#e0dbd4';
     const hasDriveId = c.driveFileId && !c.driveFileId.startsWith('sample_');
+    const thumb = hasDriveId ? _thumbUrl(c.driveFileId) : null;
     return `
       <article class="catalog-card" data-id="${_esc(c.id)}" tabindex="0"
                role="button" aria-label="Open ${_esc(c.title)}">
-        <div class="card-image-wrap" ${hasDriveId ? `data-drive-id="${_esc(c.driveFileId)}" data-catalog-id="${_esc(c.id)}"` : ''}>
+        <div class="card-image-wrap">
           <div class="card-cover-placeholder" style="background-color:${_esc(color)}">
             <span class="placeholder-title">${_esc(c.title)}</span>
           </div>
+          ${thumb ? `<img class="cover-img" src="${_esc(thumb)}" alt="" loading="lazy" aria-hidden="true">` : ''}
         </div>
         <p class="card-category">${_esc(c.category)}</p>
         <h3 class="card-title">${_esc(c.title)}</h3>

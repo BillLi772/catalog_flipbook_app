@@ -30,6 +30,21 @@ async function handleRequest(request) {
     return new Response('Method not allowed', { status: 405, headers: corsHeaders() });
   }
 
+  // ── Thumbnail mode: ?thumbnail=FILE_ID ──────────────────────────────
+  const thumbId = url.searchParams.get('thumbnail');
+  if (thumbId) {
+    if (!/^[A-Za-z0-9_\-]+$/.test(thumbId)) {
+      return new Response('Invalid file ID', { status: 400, headers: corsHeaders() });
+    }
+    const thumbUrl = `https://drive.google.com/thumbnail?id=${thumbId}&sz=w600`;
+    const thumbResp = await fetch(thumbUrl, { redirect: 'follow' });
+    const headers = new Headers(corsHeaders());
+    headers.set('Content-Type', thumbResp.headers.get('Content-Type') || 'image/jpeg');
+    headers.set('Cache-Control', 'public, max-age=86400');
+    return new Response(thumbResp.body, { status: thumbResp.status, headers });
+  }
+
+  // ── PDF proxy mode: ?id=FILE_ID ─────────────────────────────────────
   const fileId = url.searchParams.get('id');
   if (!fileId) {
     return new Response('Missing required parameter: id', { status: 400, headers: corsHeaders() });

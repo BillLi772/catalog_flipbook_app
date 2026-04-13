@@ -319,14 +319,21 @@ img, canvas {
 .hero-image-wrap {
   overflow: hidden;
   background: var(--color-surface);
+  position: relative;
 }
 
-.hero-image-wrap img {
+.hero-image-wrap .cover-img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
-  transition: transform var(--transition-slow);
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+
+.hero-image-wrap .cover-img.loaded {
+  opacity: 1;
 }
 
 .hero-cover-placeholder {
@@ -441,27 +448,20 @@ img, canvas {
   aspect-ratio: 3 / 4;
   background: var(--color-surface);
   margin-bottom: var(--space-4);
+  position: relative;
 }
 
-.card-image-wrap.cover-loaded {
-  aspect-ratio: unset;
-}
-
-.card-image-wrap img {
+.cover-img {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: auto;
-  display: block;
+  height: 100%;
+  object-fit: cover;
   opacity: 0;
-  transition: opacity var(--transition-slow), transform var(--transition-slow);
+  transition: opacity 400ms ease;
 }
 
-.card-image-wrap canvas {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-.card-image-wrap img.loaded {
+.cover-img.loaded {
   opacity: 1;
 }
 
