@@ -266,7 +266,7 @@ const Reader = (() => {
     blankEl.style.display = 'none';
     canvas.style.display = '';
 
-    const rendered = await _renderer.renderPage(pageNum, Math.round(width * window.devicePixelRatio));
+    const rendered = await _renderer.renderPage(pageNum, Math.round(width));
     if (!rendered) {
       canvas.style.display = 'none';
       blankEl.style.display = '';
