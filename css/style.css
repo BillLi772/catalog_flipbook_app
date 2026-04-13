@@ -11,11 +11,11 @@
   --color-border: #e0e0e0;
   --color-border-light: #f0f0f0;
   --color-surface: #f8f8f6;
-  --color-reader-bg: #1a1a1a;
-  --color-reader-text: #ffffff;
-  --color-reader-muted: #999999;
-  --color-reader-toolbar: #111111;
-  --color-reader-border: #333333;
+  --color-reader-bg: #ffffff;
+  --color-reader-text: #1a1a1a;
+  --color-reader-muted: #888888;
+  --color-reader-toolbar: #f5f5f5;
+  --color-reader-border: #e0e0e0;
 
   /* Typography */
   --font-primary: 'Libre Franklin', 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
@@ -1074,17 +1074,66 @@ kbd {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-4);
+  gap: var(--space-5);
   background: var(--color-reader-bg);
   z-index: 50;
-  color: var(--color-reader-muted);
+}
+
+/* Animated book icon */
+.pdf-loading-book {
+  width: 56px;
+  height: 44px;
+  position: relative;
+}
+
+.pdf-loading-book .book-spine {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: 1px;
+  z-index: 2;
+}
+
+.pdf-loading-book .book-page {
+  position: absolute;
+  top: 2px;
+  width: 24px;
+  height: 40px;
+  background: #f0ede8;
+  border-radius: 1px 3px 3px 1px;
+  transform-origin: left center;
+  animation: page-flip 1.4s ease-in-out infinite;
+}
+
+.pdf-loading-book .book-page:nth-child(2) { left: 28px; transform-origin: left center; border-radius: 3px 1px 1px 3px; animation: page-flip-right 1.4s ease-in-out infinite; }
+.pdf-loading-book .book-page:nth-child(3) { left: 4px; animation-delay: 0.2s; background: #e8e4de; }
+.pdf-loading-book .book-page:nth-child(4) { left: 28px; animation-delay: 0.2s; background: #e8e4de; border-radius: 3px 1px 1px 3px; animation: page-flip-right 1.4s ease-in-out infinite; animation-delay: 0.2s; }
+
+@keyframes page-flip {
+  0%, 30%  { transform: rotateY(0deg); }
+  60%, 100% { transform: rotateY(-30deg); }
+}
+
+@keyframes page-flip-right {
+  0%, 30%  { transform: rotateY(0deg); }
+  60%, 100% { transform: rotateY(30deg); }
+}
+
+.pdf-loading-label {
   font-size: var(--text-sm);
+  color: var(--color-reader-muted);
+  letter-spacing: 0.04em;
 }
 
 .pdf-loading-bar-track {
-  width: 200px;
+  width: 160px;
   height: 2px;
-  background: var(--color-reader-border);
+  background: var(--color-border);
+  border-radius: 2px;
   overflow: hidden;
 }
 
@@ -1092,7 +1141,8 @@ kbd {
   height: 100%;
   background: var(--color-accent);
   width: 0%;
-  transition: width var(--transition-base);
+  transition: width 300ms ease;
+  border-radius: 2px;
 }
 
 .pdf-error {

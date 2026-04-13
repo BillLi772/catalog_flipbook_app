@@ -184,10 +184,17 @@ const Reader = (() => {
     const div = document.createElement('div');
     div.className = 'pdf-loading-overlay';
     div.innerHTML = `
-      <p>Loading PDF…</p>
+      <div class="pdf-loading-book" aria-hidden="true">
+        <div class="book-spine"></div>
+        <div class="book-page"></div>
+        <div class="book-page"></div>
+        <div class="book-page"></div>
+        <div class="book-page"></div>
+      </div>
       <div class="pdf-loading-bar-track">
         <div class="pdf-loading-bar"></div>
-      </div>`;
+      </div>
+      <span class="pdf-loading-label">Opening catalog…</span>`;
     return div;
   }
 
