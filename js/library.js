@@ -165,10 +165,10 @@ const Library = (() => {
           <div class="hero-category">${_esc(c.category)}</div>
           <h2 class="hero-title">${_esc(c.title)}</h2>
           ${c.subtitle ? `<p class="hero-subtitle">${_esc(c.subtitle)}</p>` : ''}
-          <p class="hero-meta">
-            <span>${_formatDate(c.date)}</span>
-            <span>${c.pageCount} pages</span>
-          </p>
+          ${(c.date || c.pageCount > 0) ? `<p class="hero-meta">
+            ${c.date ? `<span>${_formatDate(c.date)}</span>` : ''}
+            ${c.pageCount > 0 ? `<span>${c.pageCount} pages</span>` : ''}
+          </p>` : ''}
           <p class="hero-cta">View Catalog →</p>
         </div>
       </article>`;
@@ -188,7 +188,7 @@ const Library = (() => {
         <p class="card-category">${_esc(c.category)}</p>
         <h3 class="card-title">${_esc(c.title)}</h3>
         ${c.subtitle ? `<p class="card-subtitle">${_esc(c.subtitle)}</p>` : ''}
-        <p class="card-meta">${_formatDate(c.date)} &middot; ${c.pageCount} pp</p>
+        ${(c.date || (c.pageCount > 0)) ? `<p class="card-meta">${[_formatDate(c.date), c.pageCount > 0 ? `${c.pageCount} pp` : ''].filter(Boolean).join(' · ')}</p>` : ''}
       </article>`;
   }
 
@@ -301,7 +301,7 @@ const Library = (() => {
       const renderer = new PDFRenderer();
       const url = PDFRenderer.buildUrl(driveId);
       await renderer.load(url);
-      const canvas = await renderer.renderPage(1, 600);
+      const canvas = await renderer.renderPage(1, 400);
 
       if (!wrap.isConnected) { renderer.destroy(); return; }
 
