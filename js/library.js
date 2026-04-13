@@ -242,11 +242,19 @@ const Library = (() => {
   }
 
   function _setupNavFilter() {
-    document.querySelectorAll('.nav-link[data-filter]').forEach(btn => {
+    const nav = document.querySelector('.site-nav');
+    if (!nav) return;
+
+    // Build category list from actual data
+    const categories = [...new Set(_allCatalogs.map(c => c.category).filter(Boolean))].sort();
+
+    // Rebuild nav: keep "All" button, replace the rest with real categories
+    nav.innerHTML = `<button class="nav-link nav-link--active" data-filter="all">All</button>` +
+      categories.map(cat => `<button class="nav-link" data-filter="${_esc(cat)}">${_esc(cat)}</button>`).join('');
+
+    nav.querySelectorAll('.nav-link[data-filter]').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.nav-link[data-filter]').forEach(b => {
-          b.classList.remove('nav-link--active');
-        });
+        nav.querySelectorAll('.nav-link[data-filter]').forEach(b => b.classList.remove('nav-link--active'));
         btn.classList.add('nav-link--active');
         _activeFilter = btn.dataset.filter;
         _applyFilters();
