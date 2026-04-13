@@ -184,12 +184,19 @@ const Reader = (() => {
     const div = document.createElement('div');
     div.className = 'pdf-loading-overlay';
     div.innerHTML = `
-      <div class="pdf-loading-book" aria-hidden="true">
-        <div class="book-spine"></div>
-        <div class="book-page"></div>
-        <div class="book-page"></div>
-        <div class="book-page"></div>
-        <div class="book-page"></div>
+      <div class="dino-scene" aria-hidden="true">
+        <div class="dino-runner">
+          <div class="dino-head"></div>
+          <div class="dino-torso"></div>
+          <div class="dino-legs">
+            <div class="dino-leg"></div>
+            <div class="dino-leg"></div>
+          </div>
+        </div>
+        <div class="dino-book dino-book-1"></div>
+        <div class="dino-book dino-book-2"></div>
+        <div class="dino-book dino-book-3"></div>
+        <div class="dino-ground"></div>
       </div>
       <div class="pdf-loading-bar-track">
         <div class="pdf-loading-bar"></div>
