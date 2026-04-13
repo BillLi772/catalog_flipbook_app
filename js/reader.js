@@ -276,8 +276,9 @@ const Reader = (() => {
     // Swap the canvas content by drawing rendered into the display canvas
     canvas.width = rendered.width;
     canvas.height = rendered.height;
-    canvas.style.width = rendered.style.width;
-    canvas.style.height = rendered.style.height;
+    // Let CSS control display size — width: 100%, height: auto preserves aspect ratio
+    canvas.style.width = '100%';
+    canvas.style.height = 'auto';
     const ctx = canvas.getContext('2d');
     ctx.drawImage(rendered, 0, 0);
   }
@@ -438,8 +439,7 @@ const Reader = (() => {
     dst.width = src.width;
     dst.height = src.height;
     dst.style.width = '100%';
-    dst.style.height = '100%';
-    dst.style.objectFit = 'cover';
+    dst.style.height = 'auto';
     const ctx = dst.getContext('2d');
     ctx.drawImage(src, 0, 0);
     return dst;

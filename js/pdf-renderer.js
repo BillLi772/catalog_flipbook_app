@@ -114,10 +114,6 @@ class PDFRenderer {
     canvas.width = viewport.width;
     canvas.height = viewport.height;
 
-    // CSS dimensions (display size = physical / dpr)
-    canvas.style.width = (viewport.width / dpr) + 'px';
-    canvas.style.height = (viewport.height / dpr) + 'px';
-
     const ctx = canvas.getContext('2d');
     await page.render({ canvasContext: ctx, viewport }).promise;
 

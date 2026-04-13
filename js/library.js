@@ -100,16 +100,12 @@ const Library = (() => {
     card.addEventListener('keydown', e => {
       if (e.key === 'Enter' || e.key === ' ') App.navigate(`/catalog/${featured.id}`);
     });
-    // Lazy-load hero image
-    const img = _heroEl.querySelector('img[data-src]');
-    if (img && _imageObserver) _imageObserver.observe(img);
+    // Render PDF cover for hero
+    const wrap = _heroEl.querySelector('.hero-image-wrap[data-drive-id]');
+    if (wrap && _imageObserver) _imageObserver.observe(wrap);
   }
 
   function _renderGrid(sorted) {
-    // Non-featured items (skip the hero catalog from the grid if it's in the list)
-    const heroId = (sorted.find(c => c.featured) || sorted[0])?.id;
-    // Show all items in grid (including featured) so filters show correct counts
-    // But visually, re-display featured in grid too (matches MoMA behavior)
     const items = sorted;
 
     if (items.length === 0) {
@@ -130,9 +126,11 @@ const Library = (() => {
       });
     });
 
-    // Observe lazy images
+    // Observe card wraps for PDF cover rendering
     if (_imageObserver) {
-      _gridEl.querySelectorAll('img[data-src]').forEach(img => _imageObserver.observe(img));
+      _gridEl.querySelectorAll('.card-image-wrap[data-drive-id]').forEach(wrap => {
+        _imageObserver.observe(wrap);
+      });
     }
   }
 
@@ -155,16 +153,13 @@ const Library = (() => {
 
   function _heroCardHTML(c) {
     const color = c.color || '#e0dbd4';
-    const hasImage = c.coverImage && !c.coverImage.startsWith('covers/sample');
+    const hasDriveId = c.driveFileId && !c.driveFileId.startsWith('sample_');
     return `
       <article class="hero-card" tabindex="0" role="button" aria-label="Open ${_esc(c.title)}">
-        <div class="hero-image-wrap">
-          ${hasImage
-            ? `<img data-src="${_esc(c.coverImage)}" alt="${_esc(c.title)}" loading="lazy">`
-            : `<div class="hero-cover-placeholder" style="background-color:${_esc(color)}">
-                 <span class="placeholder-title">${_esc(c.title)}</span>
-               </div>`
-          }
+        <div class="hero-image-wrap" ${hasDriveId ? `data-drive-id="${_esc(c.driveFileId)}" data-catalog-id="${_esc(c.id)}"` : ''}>
+          <div class="hero-cover-placeholder" style="background-color:${_esc(color)}">
+            <span class="placeholder-title">${_esc(c.title)}</span>
+          </div>
         </div>
         <div class="hero-info">
           <div class="hero-category">${_esc(c.category)}</div>
@@ -181,17 +176,14 @@ const Library = (() => {
 
   function _cardHTML(c, index) {
     const color = c.color || '#e0dbd4';
-    const hasImage = c.coverImage && !c.coverImage.startsWith('covers/sample');
+    const hasDriveId = c.driveFileId && !c.driveFileId.startsWith('sample_');
     return `
       <article class="catalog-card" data-id="${_esc(c.id)}" tabindex="0"
                role="button" aria-label="Open ${_esc(c.title)}">
-        <div class="card-image-wrap">
-          ${hasImage
-            ? `<img data-src="${_esc(c.coverImage)}" alt="${_esc(c.title)}" loading="lazy">`
-            : `<div class="card-cover-placeholder" style="background-color:${_esc(color)}">
-                 <span class="placeholder-title">${_esc(c.title)}</span>
-               </div>`
-          }
+        <div class="card-image-wrap" ${hasDriveId ? `data-drive-id="${_esc(c.driveFileId)}" data-catalog-id="${_esc(c.id)}"` : ''}>
+          <div class="card-cover-placeholder" style="background-color:${_esc(color)}">
+            <span class="placeholder-title">${_esc(c.title)}</span>
+          </div>
         </div>
         <p class="card-category">${_esc(c.category)}</p>
         <h3 class="card-title">${_esc(c.title)}</h3>
@@ -267,38 +259,62 @@ const Library = (() => {
   // ──────────────────────────────────────────────
 
   function _setupImageObserver() {
+    const observe = (wrap) => _renderPDFCover(wrap);
+
     if (!('IntersectionObserver' in window)) {
-      // Fallback: load all immediately
-      _imageObserver = { observe: (img) => _loadImage(img), disconnect: () => {} };
+      _imageObserver = { observe, disconnect: () => {} };
       return;
     }
 
     _imageObserver = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          _loadImage(entry.target);
           _imageObserver.unobserve(entry.target);
+          _renderPDFCover(entry.target);
         }
       });
-    }, { rootMargin: '200px' });
+    }, { rootMargin: '300px' });
   }
 
-  function _loadImage(img) {
-    const src = img.dataset.src;
-    if (!src) return;
-    img.src = src;
-    img.addEventListener('load', () => img.classList.add('loaded'), { once: true });
-    img.addEventListener('error', () => {
-      // Replace with placeholder on error
-      const placeholder = img.parentElement;
-      const catalog = _allCatalogs.find(c => c.coverImage === src);
-      if (catalog && placeholder) {
-        placeholder.innerHTML = `
-          <div class="card-cover-placeholder" style="background-color:${catalog.color || '#e0dbd4'}">
-            <span class="placeholder-title">${_esc(catalog.title)}</span>
-          </div>`;
-      }
-    }, { once: true });
+  async function _renderPDFCover(wrap) {
+    const driveId = wrap.dataset.driveId;
+    const catalogId = wrap.dataset.catalogId;
+    if (!driveId || !catalogId) return;
+
+    const catalog = _allCatalogs.find(c => c.id === catalogId);
+    const color = catalog?.color || '#e0dbd4';
+
+    // Show subtle loading state
+    wrap.innerHTML = `<div class="cover-loading" style="background:${color}">
+      <div class="cover-loading-bar"></div>
+    </div>`;
+
+    try {
+      const renderer = new PDFRenderer();
+      const url = PDFRenderer.buildUrl(driveId);
+      await renderer.load(url);
+      const canvas = await renderer.renderPage(1, 600);
+
+      if (!wrap.isConnected) { renderer.destroy(); return; }
+
+      canvas.style.width = '100%';
+      canvas.style.height = 'auto';
+      canvas.style.display = 'block';
+      canvas.style.opacity = '0';
+      canvas.style.transition = 'opacity 400ms ease';
+
+      wrap.innerHTML = '';
+      wrap.appendChild(canvas);
+      requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+      renderer.destroy();
+    } catch (err) {
+      if (!wrap.isConnected) return;
+      wrap.innerHTML = `
+        <div class="card-cover-placeholder" style="background-color:${color}">
+          <span class="placeholder-title">${_esc(catalog?.title || '')}</span>
+        </div>`;
+    }
   }
 
   // ──────────────────────────────────────────────
