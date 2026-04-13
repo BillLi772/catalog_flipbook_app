@@ -159,10 +159,10 @@ const Library = (() => {
     return `
       <article class="hero-card" tabindex="0" role="button" aria-label="Open ${_esc(c.title)}">
         <div class="hero-image-wrap">
-          <div class="hero-cover-placeholder" style="background-color:${_esc(color)}">
+          ${thumb ? `<img class="cover-img" src="${_esc(thumb)}" alt="" loading="eager" aria-hidden="true">` : ''}
+          <div class="hero-cover-placeholder" style="background-color:${_esc(color)}${!thumb ? ';position:relative' : ''}">
             <span class="placeholder-title">${_esc(c.title)}</span>
           </div>
-          ${thumb ? `<img class="cover-img" src="${_esc(thumb)}" alt="" aria-hidden="true">` : ''}
         </div>
         <div class="hero-info">
           <div class="hero-category">${_esc(c.category)}</div>
@@ -192,10 +192,10 @@ const Library = (() => {
       <article class="catalog-card" data-id="${_esc(c.id)}" tabindex="0"
                role="button" aria-label="Open ${_esc(c.title)}">
         <div class="card-image-wrap">
-          <div class="card-cover-placeholder" style="background-color:${_esc(color)}">
+          ${thumb ? `<img class="cover-img" src="${_esc(thumb)}" alt="" loading="eager" aria-hidden="true">` : ''}
+          <div class="card-cover-placeholder" style="background-color:${_esc(color)}${!thumb ? ';position:relative' : ''}">
             <span class="placeholder-title">${_esc(c.title)}</span>
           </div>
-          ${thumb ? `<img class="cover-img" src="${_esc(thumb)}" alt="" loading="lazy" aria-hidden="true">` : ''}
         </div>
         <p class="card-category">${_esc(c.category)}</p>
         <h3 class="card-title">${_esc(c.title)}</h3>

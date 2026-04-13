@@ -323,11 +323,9 @@ img, canvas {
 }
 
 .hero-image-wrap .cover-img {
-  position: absolute;
-  inset: 0;
+  display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
   opacity: 0;
   transition: opacity 400ms ease;
 }
@@ -336,14 +334,19 @@ img, canvas {
   opacity: 1;
 }
 
+.hero-image-wrap .cover-img.loaded ~ .hero-cover-placeholder {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .hero-cover-placeholder {
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 0;
   min-height: 480px;
   display: flex;
   align-items: flex-end;
   padding: var(--space-8);
-  transition: transform var(--transition-slow);
+  transition: opacity 400ms ease, transform var(--transition-slow);
 }
 
 .hero-info {
@@ -445,18 +448,16 @@ img, canvas {
 
 .card-image-wrap {
   overflow: hidden;
-  aspect-ratio: 3 / 4;
   background: var(--color-surface);
   margin-bottom: var(--space-4);
   position: relative;
 }
 
+/* Image sits in normal flow — sets the natural height of the wrapper */
 .cover-img {
-  position: absolute;
-  inset: 0;
+  display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
   opacity: 0;
   transition: opacity 400ms ease;
 }
@@ -465,13 +466,19 @@ img, canvas {
   opacity: 1;
 }
 
+/* Placeholder overlays the image while it loads, then fades out */
 .card-cover-placeholder {
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: flex-end;
   padding: var(--space-5);
-  transition: transform var(--transition-slow);
+  transition: opacity 400ms ease, transform var(--transition-slow);
+}
+
+.cover-img.loaded ~ .card-cover-placeholder {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .catalog-card:hover .card-cover-placeholder,
