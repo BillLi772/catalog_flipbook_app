@@ -32,6 +32,10 @@ class PDFRenderer {
       cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
       cMapPacked: true,
       enableXfa: false,
+      disableRange: false,
+      disableStream: false,
+      disableAutoFetch: true,  // Only fetch chunks needed for the requested page
+      rangeChunkSize: 65536,   // 64 KB chunks
     });
 
     // Progress callback

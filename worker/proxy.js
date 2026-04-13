@@ -80,6 +80,9 @@ async function handleRequest(request) {
   const contentRange = driveResponse.headers.get('Content-Range');
   if (contentRange) responseHeaders.set('Content-Range', contentRange);
 
+  // Tell PDF.js that range requests are supported (enables partial fetching)
+  responseHeaders.set('Accept-Ranges', 'bytes');
+
   // Cache for 1 hour at the CDN edge (PDFs rarely change)
   responseHeaders.set('Cache-Control', 'public, max-age=3600');
 

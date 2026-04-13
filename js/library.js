@@ -266,6 +266,27 @@ const Library = (() => {
   // Lazy image loading
   // ──────────────────────────────────────────────
 
+  // Concurrency limiter — max 3 PDFs fetched at once
+  let _activeRenders = 0;
+  const _renderWaitQueue = [];
+  const _MAX_CONCURRENT = 4;
+
+  function _acquireRenderSlot() {
+    if (_activeRenders < _MAX_CONCURRENT) {
+      _activeRenders++;
+      return Promise.resolve();
+    }
+    return new Promise(resolve => _renderWaitQueue.push(resolve));
+  }
+
+  function _releaseRenderSlot() {
+    _activeRenders--;
+    if (_renderWaitQueue.length > 0) {
+      _activeRenders++;
+      _renderWaitQueue.shift()();
+    }
+  }
+
   function _setupImageObserver() {
     const observe = (wrap) => _renderPDFCover(wrap);
 
@@ -292,12 +313,15 @@ const Library = (() => {
     const catalog = _allCatalogs.find(c => c.id === catalogId);
     const color = catalog?.color || '#e0dbd4';
 
-    // Show subtle loading state
+    // Show loading state (aspect-ratio:3/4 from CSS keeps uniform height)
     wrap.innerHTML = `<div class="cover-loading" style="background:${color}">
       <div class="cover-loading-bar"></div>
     </div>`;
 
+    await _acquireRenderSlot();
     try {
+      if (!wrap.isConnected) return;
+
       const renderer = new PDFRenderer();
       const url = PDFRenderer.buildUrl(driveId);
       await renderer.load(url);
@@ -313,6 +337,7 @@ const Library = (() => {
 
       wrap.innerHTML = '';
       wrap.appendChild(canvas);
+      wrap.classList.add('cover-loaded'); // remove fixed aspect-ratio
       requestAnimationFrame(() => { canvas.style.opacity = '1'; });
 
       renderer.destroy();
@@ -322,6 +347,8 @@ const Library = (() => {
         <div class="card-cover-placeholder" style="background-color:${color}">
           <span class="placeholder-title">${_esc(catalog?.title || '')}</span>
         </div>`;
+    } finally {
+      _releaseRenderSlot();
     }
   }
 

@@ -438,8 +438,13 @@ img, canvas {
 
 .card-image-wrap {
   overflow: hidden;
+  aspect-ratio: 3 / 4;
   background: var(--color-surface);
   margin-bottom: var(--space-4);
+}
+
+.card-image-wrap.cover-loaded {
+  aspect-ratio: unset;
 }
 
 .card-image-wrap img {
