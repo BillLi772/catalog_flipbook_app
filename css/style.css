@@ -204,6 +204,16 @@ img, canvas {
   transform: scaleX(1);
 }
 
+.nav-link--purchase {
+  text-decoration: none;
+  color: var(--color-accent);
+}
+
+.nav-link--purchase:hover {
+  color: var(--color-accent);
+  opacity: 0.75;
+}
+
 /* Header Actions */
 .header-actions {
   display: flex;
