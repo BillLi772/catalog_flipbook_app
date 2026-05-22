@@ -8,7 +8,7 @@ const Library = (() => {
   let _activeFilter = 'all';
   let _artistFilter = '';   // selected artist name, or '' for all
   let _searchQuery = '';
-  let _sortOrder = 'date-desc';
+  let _sortOrder = 'alpha';
   let _imageObserver = null;
   let _initialized = false;
 
