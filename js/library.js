@@ -91,7 +91,11 @@ const Library = (() => {
   }
 
   function _renderHero(sorted) {
-    const featured = sorted.find(c => c.featured) || sorted[0];
+    // Always show the most-recent catalog (sorted[0] when order is date-desc).
+    // To pick the true latest regardless of current sort, find by max date.
+    const latest = [..._allCatalogs].sort((a, b) =>
+      (b.date || '').localeCompare(a.date || ''))[0];
+    const featured = latest || sorted[0];
     if (!featured) {
       _heroEl.innerHTML = '';
       return;
