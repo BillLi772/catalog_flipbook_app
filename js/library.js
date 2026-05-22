@@ -81,8 +81,10 @@ const Library = (() => {
         return list.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
       case 'alpha':
         return list.sort((a, b) => a.title.localeCompare(b.title));
-      case 'category':
-        return list.sort((a, b) => a.category.localeCompare(b.category) || a.title.localeCompare(b.title));
+      case 'category': {
+        const artist = t => (t.title.includes(' : ') ? t.title.split(' : ')[0] : t.title).trim();
+        return list.sort((a, b) => artist(a).localeCompare(artist(b)) || a.title.localeCompare(b.title));
+      }
       default:
         return list;
     }
