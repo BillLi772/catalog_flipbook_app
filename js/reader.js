@@ -732,18 +732,14 @@ const Reader = (() => {
     document.getElementById('btn-fullscreen')?.addEventListener('click', _toggleFullscreen);
     document.addEventListener('fullscreenchange', _onFullscreenChange);
 
-    // Download
-    const dlBtn = document.getElementById('btn-download');
-    if (dlBtn && _catalog) {
-      dlBtn.href = PDFRenderer.buildUrl(_catalog.driveFileId);
-      dlBtn.download = `${_catalog.id}.pdf`;
-    }
-
     // Shortcuts button
     document.getElementById('btn-shortcuts')?.addEventListener('click', _showShortcutsOverlay);
 
     // Keyboard
     document.addEventListener('keydown', _onKeyDown);
+
+    // Disable right-click on canvases (copyright protection)
+    document.getElementById('reader-view')?.addEventListener('contextmenu', e => e.preventDefault());
 
     // Touch
     document.getElementById('reader-stage')?.addEventListener('touchstart', _onTouchStart, { passive: true });
