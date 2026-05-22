@@ -93,11 +93,10 @@ const Library = (() => {
   }
 
   function _renderHero(sorted) {
-    // Always show the most-recent catalog (sorted[0] when order is date-desc).
-    // To pick the true latest regardless of current sort, find by max date.
-    const latest = [..._allCatalogs].sort((a, b) =>
-      (b.date || '').localeCompare(a.date || ''))[0];
-    const featured = latest || sorted[0];
+    // Pin hero to Becky Moon's catalog; fall back to first sorted item.
+    const featured =
+      _allCatalogs.find(c => _artistName(c).toLowerCase() === 'becky moon') ||
+      sorted[0];
     if (!featured) {
       _heroEl.innerHTML = '';
       return;
