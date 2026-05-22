@@ -9,6 +9,7 @@ const Library = (() => {
   let _artistFilter = '';   // selected artist name, or '' for all
   let _searchQuery = '';
   let _sortOrder = 'alpha';
+  let _heroCatalog = null;  // picked once on load, stays fixed
   let _imageObserver = null;
   let _initialized = false;
 
@@ -54,6 +55,8 @@ const Library = (() => {
       const data = await resp.json();
       _allCatalogs = data.catalogs || [];
       _filtered = [..._allCatalogs];
+      // Pick a random hero once — stays the same for the whole session
+      _heroCatalog = _allCatalogs[Math.floor(Math.random() * _allCatalogs.length)] || null;
       _sortAndRender();
 
       document.getElementById('loading-state').hidden = true;
@@ -93,10 +96,16 @@ const Library = (() => {
   }
 
   function _renderHero(sorted) {
-    // Pin hero to Becky Moon's catalog; fall back to first sorted item.
-    const featured =
-      _allCatalogs.find(c => _artistName(c).toLowerCase() === 'becky moon') ||
-      sorted[0];
+    // Hide hero whenever search or artist filter is active
+    if (_searchQuery || _artistFilter) {
+      _heroEl.hidden = true;
+      _heroEl.innerHTML = '';
+      return;
+    }
+    _heroEl.hidden = false;
+
+    // Use the randomly chosen catalog (picked once on load)
+    const featured = _heroCatalog || sorted[0];
     if (!featured) {
       _heroEl.innerHTML = '';
       return;
