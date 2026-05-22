@@ -6,6 +6,7 @@ const Library = (() => {
   let _allCatalogs = [];
   let _filtered = [];
   let _activeFilter = 'all';
+  let _artistFilter = '';   // selected artist name, or '' for all
   let _searchQuery = '';
   let _sortOrder = 'date-desc';
   let _imageObserver = null;
@@ -28,6 +29,7 @@ const Library = (() => {
 
     _setupSearch();
     _setupSort();
+    _setupArtistFilter();
     _setupNavFilter();
 
     _initialized = true;
@@ -217,6 +219,11 @@ const Library = (() => {
   function _applyFilters() {
     let results = [..._allCatalogs];
 
+    // Artist dropdown filter
+    if (_artistFilter) {
+      results = results.filter(c => _artistName(c) === _artistFilter);
+    }
+
     // Filter: artist:Name searches title, category filter matches category field
     if (_activeFilter && _activeFilter !== 'all') {
       if (_activeFilter.startsWith('artist:')) {
@@ -241,6 +248,11 @@ const Library = (() => {
     _sortAndRender();
   }
 
+  /** Extract artist name from title (text before ' : ', or full title). */
+  function _artistName(c) {
+    return (c.title.includes(' : ') ? c.title.split(' : ')[0] : c.title).trim();
+  }
+
   function _setupSearch() {
     const input = document.getElementById('search-input');
     if (!input) return;
@@ -261,6 +273,28 @@ const Library = (() => {
     sel.addEventListener('change', () => {
       _sortOrder = sel.value;
       _sortAndRender();
+    });
+  }
+
+  function _setupArtistFilter() {
+    const sel = document.getElementById('artist-filter');
+    if (!sel) return;
+
+    // Populate options from catalog data (alphabetical, deduplicated)
+    const names = [...new Set(
+      _allCatalogs.map(c => _artistName(c))
+    )].sort((a, b) => a.localeCompare(b));
+
+    names.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      sel.appendChild(opt);
+    });
+
+    sel.addEventListener('change', () => {
+      _artistFilter = sel.value;
+      _applyFilters();
     });
   }
 
