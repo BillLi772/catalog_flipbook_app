@@ -172,6 +172,10 @@ const Library = (() => {
     const color = c.color || '#e0dbd4';
     const hasDriveId = c.driveFileId && !c.driveFileId.startsWith('sample_');
     const thumb = hasDriveId ? _thumbUrl(c.driveFileId) : null;
+    // Split "Artist : Catalog Name" into two parts for visual hierarchy
+    const titleParts = c.title.includes(' : ') ? c.title.split(' : ') : [c.title, ''];
+    const artistLabel = titleParts[0].trim();
+    const catalogTitle = titleParts.slice(1).join(' : ').trim() || c.title;
     return `
       <article class="hero-card" tabindex="0" role="button" aria-label="Open ${_esc(c.title)}">
         <div class="hero-image-wrap">
@@ -180,8 +184,10 @@ const Library = (() => {
             <span class="placeholder-title">${_esc(c.title)}</span>
           </div>
         </div>
-        <div class="hero-info">
-          <h2 class="hero-title">${_esc(c.title)}</h2>
+        <div class="hero-info" style="border-left: 3px solid ${_esc(color)}">
+          <p class="hero-gallery-label">Bruno David Gallery</p>
+          <p class="hero-artist">${_esc(artistLabel)}</p>
+          <h2 class="hero-title">${_esc(catalogTitle)}</h2>
           ${c.subtitle ? `<p class="hero-subtitle">${_esc(c.subtitle)}</p>` : ''}
           ${(c.date || c.pageCount > 0) ? `<p class="hero-meta">
             ${c.date ? `<span>${_formatDate(c.date)}</span>` : ''}
