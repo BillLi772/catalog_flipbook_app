@@ -185,7 +185,6 @@ const Library = (() => {
           </div>
         </div>
         <div class="hero-info" style="border-left: 3px solid ${_esc(color)}">
-          <p class="hero-gallery-label">Bruno David Gallery</p>
           <p class="hero-artist">${_esc(artistLabel)}</p>
           <h2 class="hero-title">${_esc(catalogTitle)}</h2>
           ${c.subtitle ? `<p class="hero-subtitle">${_esc(c.subtitle)}</p>` : ''}
