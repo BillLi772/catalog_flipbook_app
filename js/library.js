@@ -187,7 +187,6 @@ const Library = (() => {
             ${c.date ? `<span>${_formatDate(c.date)}</span>` : ''}
             ${c.pageCount > 0 ? `<span>${c.pageCount} pages</span>` : ''}
           </p>` : ''}
-          <p class="hero-cta">View Catalog →</p>
         </div>
       </article>`;
   }
