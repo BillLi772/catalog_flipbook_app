@@ -181,7 +181,6 @@ const Library = (() => {
           </div>
         </div>
         <div class="hero-info">
-          <div class="hero-category">${_esc(c.category)}</div>
           <h2 class="hero-title">${_esc(c.title)}</h2>
           ${c.subtitle ? `<p class="hero-subtitle">${_esc(c.subtitle)}</p>` : ''}
           ${(c.date || c.pageCount > 0) ? `<p class="hero-meta">
@@ -213,7 +212,6 @@ const Library = (() => {
             <span class="placeholder-title">${_esc(c.title)}</span>
           </div>
         </div>
-        <p class="card-category">${_esc(c.category)}</p>
         <h3 class="card-title">${_esc(c.title)}</h3>
         ${c.subtitle ? `<p class="card-subtitle">${_esc(c.subtitle)}</p>` : ''}
         ${(c.date || (c.pageCount > 0)) ? `<p class="card-meta">${[_formatDate(c.date), c.pageCount > 0 ? `${c.pageCount} pp` : ''].filter(Boolean).join(' · ')}</p>` : ''}
@@ -434,13 +432,32 @@ const Library = (() => {
     return _allCatalogs.find(c => c.id === id) || null;
   }
 
-  /** Return catalogs in the same category (excluding self), up to n */
+  /** Return related catalogs: same artist first, then random others, up to n */
   function getRelated(id, n = 3) {
     const self = getCatalog(id);
     if (!self) return [];
-    return _allCatalogs
-      .filter(c => c.id !== id && c.category === self.category)
-      .slice(0, n);
+    const selfArtist = _artistName(self).toLowerCase();
+
+    // Same artist (excluding self)
+    const sameArtist = _allCatalogs.filter(c =>
+      c.id !== id && _artistName(c).toLowerCase() === selfArtist
+    );
+
+    if (sameArtist.length >= n) return sameArtist.slice(0, n);
+
+    // Fill remaining slots with a seeded shuffle of other catalogs
+    const others = _allCatalogs.filter(c =>
+      c.id !== id && _artistName(c).toLowerCase() !== selfArtist
+    );
+    // Deterministic shuffle based on catalog id so suggestions stay consistent
+    const seed = id.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+    const shuffled = others.slice().sort((a, b) => {
+      const ha = (a.id.charCodeAt(0) * 31 + seed) % 97;
+      const hb = (b.id.charCodeAt(0) * 31 + seed) % 97;
+      return ha - hb;
+    });
+
+    return [...sameArtist, ...shuffled].slice(0, n);
   }
 
   return { init, destroy, getCatalog, getRelated };

@@ -591,11 +591,16 @@ const Reader = (() => {
     const related = Library.getRelated(_catalog.id, 3);
     if (related.length === 0) return;
 
-    $relatedGrid.innerHTML = related.map(c => `
+    $relatedGrid.innerHTML = related.map(c => {
+      const parts = c.title.includes(' : ') ? c.title.split(' : ') : [c.title, ''];
+      const artist = parts[0].trim();
+      const catalogName = parts.slice(1).join(' : ').trim();
+      return `
       <div class="related-card" data-id="${c.id}" role="button" tabindex="0" aria-label="Open ${_escHtml(c.title)}">
-        <div class="related-card-title">${_escHtml(c.title)}</div>
-        <div class="related-card-cat">${_escHtml(c.category)}</div>
-      </div>`).join('');
+        ${catalogName ? `<div class="related-card-title">${_escHtml(catalogName)}</div>` : ''}
+        <div class="related-card-cat">${_escHtml(artist)}</div>
+      </div>`;
+    }).join('');
 
     $relatedGrid.querySelectorAll('.related-card').forEach(card => {
       card.addEventListener('click', () => App.navigate(`/catalog/${card.dataset.id}`));
