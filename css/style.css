@@ -951,10 +951,10 @@ img, canvas {
   left: 50%;
   transform: translateX(-50%);
   width: min(90vw, 800px);
-  background: rgba(0,0,0,0.45);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(10,10,10,0.55);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255,255,255,0.12);
   padding: var(--space-6) var(--space-8);
   z-index: 15;
 }
@@ -964,7 +964,7 @@ img, canvas {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-reader-muted);
+  color: rgba(255,255,255,0.45);
   margin-bottom: var(--space-4);
 }
 
@@ -977,25 +977,26 @@ img, canvas {
 .related-card {
   cursor: pointer;
   padding: var(--space-3);
-  border: 1px solid var(--color-reader-border);
+  border: 1px solid rgba(255,255,255,0.15);
   transition: border-color var(--transition-fast);
 }
 
 .related-card:hover {
-  border-color: rgba(255,255,255,0.3);
+  border-color: rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.05);
 }
 
 .related-card-title {
   font-size: var(--text-sm);
-  font-weight: 700;
-  color: var(--color-reader-text);
+  font-weight: 600;
+  color: rgba(255,255,255,0.92);
   letter-spacing: var(--tracking-tight);
   margin-bottom: var(--space-1);
 }
 
 .related-card-cat {
   font-size: var(--text-xs);
-  color: var(--color-reader-muted);
+  color: rgba(255,255,255,0.5);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
