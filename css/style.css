@@ -913,7 +913,7 @@ img, canvas {
   position: absolute;
   right: 0;
   top: 0;
-  bottom: 0;
+  bottom: var(--reader-toolbar-height);
   width: 160px;
   background: rgba(0,0,0,0.85);
   border-left: 1px solid var(--color-reader-border);
