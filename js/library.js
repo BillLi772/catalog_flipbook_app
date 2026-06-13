@@ -50,7 +50,7 @@ const Library = (() => {
 
   async function _loadCatalogs() {
     try {
-      const resp = await fetch('catalogs.json?v=' + Date.now());
+      const resp = await fetch('/catalogs.json?v=' + Date.now());
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
       _allCatalogs = data.catalogs || [];
