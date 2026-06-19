@@ -1,7 +1,103 @@
 {
   "folderUrl": "https://drive.google.com/drive/folders/1U2_lMcMB8IxVL-1HVIHtF8N9FarJ18aL",
-  "generated": "2026-06-10T21:49:37.886Z",
+  "generated": "2026-06-19T13:43:35.728Z",
   "catalogs": [
+    {
+      "id": "blickenstaff-jacob-show-of-hands",
+      "title": "Blickenstaff Jacob : Show Of Hands",
+      "subtitle": "",
+      "category": "Exhibition",
+      "date": "",
+      "driveFileId": "1f50Gvpdwj-0Gpjx5b6jTxyJwUI_rYtb7",
+      "coverImage": "covers/blickenstaff-jacob-show-of-hands.jpg",
+      "pageCount": 0,
+      "featured": true,
+      "color": null
+    },
+    {
+      "id": "dubinsky-drury-yvette-traveling",
+      "title": "Dubinsky Drury Yvette : Traveling",
+      "subtitle": "",
+      "category": "Exhibition",
+      "date": "",
+      "driveFileId": "1Xs4QDAgyOPAj_j1ZlG2Vf3HJ9HPdY4-S",
+      "coverImage": "covers/dubinsky-drury-yvette-traveling.jpg",
+      "pageCount": 0,
+      "featured": false,
+      "color": null
+    },
+    {
+      "id": "dubinsky-drury-yvette-reconstruct",
+      "title": "Dubinsky Drury Yvette : Reconstruct",
+      "subtitle": "",
+      "category": "Exhibition",
+      "date": "",
+      "driveFileId": "1ttzO2baFSae7unOQf8MyfR0xIDvXnVgW",
+      "coverImage": "covers/dubinsky-drury-yvette-reconstruct.jpg",
+      "pageCount": 0,
+      "featured": false,
+      "color": null
+    },
+    {
+      "id": "dubinsky-drury-yvette-there-and-gone",
+      "title": "Dubinsky Drury Yvette : There And Gone",
+      "subtitle": "",
+      "category": "Exhibition",
+      "date": "",
+      "driveFileId": "1nv5D1mnUE1RkI2m0LmODiB0JgateZsTS",
+      "coverImage": "covers/dubinsky-drury-yvette-there-and-gone.jpg",
+      "pageCount": 0,
+      "featured": false,
+      "color": null
+    },
+    {
+      "id": "dubinsky-drury-yvette-cite-des-arts",
+      "title": "Dubinsky Drury Yvette : Cite Des Arts",
+      "subtitle": "",
+      "category": "Exhibition",
+      "date": "",
+      "driveFileId": "1VEEQMKbrF-3vhSfCOXCEJ8Z9zIpSYYFh",
+      "coverImage": "covers/dubinsky-drury-yvette-cite-des-arts.jpg",
+      "pageCount": 0,
+      "featured": false,
+      "color": null
+    },
+    {
+      "id": "dubinsky-drury-yvette-dividing-time",
+      "title": "Dubinsky Drury Yvette : Dividing Time",
+      "subtitle": "",
+      "category": "Exhibition",
+      "date": "",
+      "driveFileId": "1SMZ6PHGs5-WJGRC2Yo4mFgV1Pm_Sti2Y",
+      "coverImage": "covers/dubinsky-drury-yvette-dividing-time.jpg",
+      "pageCount": 0,
+      "featured": false,
+      "color": null
+    },
+    {
+      "id": "shaw-judith-off-the-wall",
+      "title": "Shaw Judith : Off The Wall",
+      "subtitle": "",
+      "category": "Exhibition",
+      "date": "",
+      "driveFileId": "11Ptrv3WTA5CAAQx4V5w4z7nbUGQzgERl",
+      "coverImage": "covers/shaw-judith-off-the-wall.jpg",
+      "pageCount": 0,
+      "featured": false,
+      "color": null
+    },
+    {
+      "id": "gainer-jonathan-aeroglyphs",
+      "title": "Gainer Jonathan : Aeroglyphs",
+      "subtitle": "",
+      "category": "Exhibition",
+      "date": "",
+      "driveFileId": "1SY-8KktTy8OwpIpQ5hoKsQXJ0HbaiIVr",
+      "coverImage": "covers/gainer-jonathan-aeroglyphs.jpg",
+      "pageCount": 0,
+      "featured": false,
+      "color": null
+    },
     {
       "id": "turnell-charles-prairie-sky",
       "title": "Turnell Charles : Prairie & Sky",
@@ -11,7 +107,7 @@
       "driveFileId": "18_T-19pR6D-YIhHnH-VhXv-jGd7b2yja",
       "coverImage": "covers/turnell-charles-prairie-sky.jpg",
       "pageCount": 0,
-      "featured": true,
+      "featured": false,
       "color": null
     },
     {
@@ -742,18 +838,6 @@
       "date": "",
       "driveFileId": "1qG4XZAoJ4Jp6FQe8y6u9Bf8DhhHoP3FR",
       "coverImage": "covers/laskey-leslie-sent-security-envelopes-now-tampered.jpg",
-      "pageCount": 0,
-      "featured": false,
-      "color": null
-    },
-    {
-      "id": "drury-dubinsky-yvette-there-and-gone",
-      "title": "Drury Dubinsky Yvette : There And Gone",
-      "subtitle": "",
-      "category": "Exhibition",
-      "date": "",
-      "driveFileId": "1nv5D1mnUE1RkI2m0LmODiB0JgateZsTS",
-      "coverImage": "covers/drury-dubinsky-yvette-there-and-gone.jpg",
       "pageCount": 0,
       "featured": false,
       "color": null
@@ -1695,30 +1779,6 @@
       "color": null
     },
     {
-      "id": "drury-dubinsky-yvette-traveling",
-      "title": "Drury Dubinsky Yvette : Traveling",
-      "subtitle": "",
-      "category": "Exhibition",
-      "date": "",
-      "driveFileId": "1Xs4QDAgyOPAj_j1ZlG2Vf3HJ9HPdY4-S",
-      "coverImage": "covers/drury-dubinsky-yvette-traveling.jpg",
-      "pageCount": 0,
-      "featured": false,
-      "color": null
-    },
-    {
-      "id": "drury-dubinsky-yvette-cite-des-arts",
-      "title": "Drury Dubinsky Yvette : CITÈ DES ARTS",
-      "subtitle": "",
-      "category": "Exhibition",
-      "date": "",
-      "driveFileId": "1VEEQMKbrF-3vhSfCOXCEJ8Z9zIpSYYFh",
-      "coverImage": "covers/drury-dubinsky-yvette-cite-des-arts.jpg",
-      "pageCount": 0,
-      "featured": false,
-      "color": null
-    },
-    {
       "id": "downen-jill-hard-hat-optional",
       "title": "Downen Jill : Hard Hat Optional",
       "subtitle": "",
@@ -1786,18 +1846,6 @@
       "date": "",
       "driveFileId": "1MKmCeGDqEUXiSE-HK3dxyIuTQWmSQCJD",
       "coverImage": "covers/hall-joan-2007-catalog.jpg",
-      "pageCount": 0,
-      "featured": false,
-      "color": null
-    },
-    {
-      "id": "drury-dubinsky-yvette-catalog",
-      "title": "Drury Dubinsky Yvette : Catalog",
-      "subtitle": "",
-      "category": "Exhibition",
-      "date": "",
-      "driveFileId": "1SMZ6PHGs5-WJGRC2Yo4mFgV1Pm_Sti2Y",
-      "coverImage": "covers/drury-dubinsky-yvette-catalog.jpg",
       "pageCount": 0,
       "featured": false,
       "color": null
