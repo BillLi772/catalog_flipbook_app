@@ -1286,15 +1286,25 @@ kbd {
 @media (max-width: 768px) {
   .header-inner {
     padding: 0 var(--space-4);
-    gap: var(--space-4);
+    gap: var(--space-2);
+  }
+
+  .site-title {
+    font-size: var(--text-sm);
+    flex-shrink: 1;
+    min-width: 0;
   }
 
   .nav-link--home {
     display: none;
   }
 
+  #artist-filter {
+    display: none;
+  }
+
   .search-input {
-    width: 120px;
+    width: 90px;
   }
 
   .sort-select {
