@@ -1289,7 +1289,7 @@ kbd {
     gap: var(--space-4);
   }
 
-  .site-nav {
+  .nav-link--home {
     display: none;
   }
 
