@@ -1284,27 +1284,51 @@ kbd {
 }
 
 @media (max-width: 768px) {
-  .header-inner {
-    padding: 0 var(--space-4);
-    gap: var(--space-2);
+  #site-header {
+    height: auto;
   }
 
+  .header-inner {
+    flex-wrap: wrap;
+    padding: var(--space-3) var(--space-4);
+    gap: 0;
+    row-gap: var(--space-2);
+  }
+
+  /* Row 1: title left, purchase right */
   .site-title {
+    flex: 1;
     font-size: var(--text-sm);
-    flex-shrink: 1;
-    min-width: 0;
+  }
+
+  .site-nav {
+    flex: 0;
+    order: 2;
   }
 
   .nav-link--home {
     display: none;
   }
 
-  #artist-filter {
-    display: none;
+  .nav-link--purchase {
+    font-size: var(--text-xs);
+    padding: var(--space-1) 0 var(--space-1) var(--space-4);
+  }
+
+  /* Row 2: search spans full width */
+  .header-actions {
+    order: 3;
+    width: 100%;
+    flex-shrink: 0;
   }
 
   .search-input {
-    width: 90px;
+    flex: 1;
+    width: 100%;
+  }
+
+  #artist-filter {
+    display: none;
   }
 
   .sort-select {
