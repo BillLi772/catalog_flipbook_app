@@ -1,7 +1,19 @@
 {
   "folderUrl": "https://drive.google.com/drive/folders/1U2_lMcMB8IxVL-1HVIHtF8N9FarJ18aL",
-  "generated": "2026-06-19T13:43:35.728Z",
+  "generated": "2026-06-30T17:54:57.718Z",
   "catalogs": [
+    {
+      "id": "shaw-judith-off-the-wall",
+      "title": "Shaw Judith : Off The Wall",
+      "subtitle": "",
+      "category": "Exhibition",
+      "date": "",
+      "driveFileId": "1LSyvGZQ2n_fKUFn9dtBSvgb-L4Xkjwuy",
+      "coverImage": "covers/shaw-judith-off-the-wall.jpg",
+      "pageCount": 0,
+      "featured": true,
+      "color": null
+    },
     {
       "id": "blickenstaff-jacob-show-of-hands",
       "title": "Blickenstaff Jacob : Show Of Hands",
@@ -11,7 +23,7 @@
       "driveFileId": "1f50Gvpdwj-0Gpjx5b6jTxyJwUI_rYtb7",
       "coverImage": "covers/blickenstaff-jacob-show-of-hands.jpg",
       "pageCount": 0,
-      "featured": true,
+      "featured": false,
       "color": null
     },
     {
@@ -70,18 +82,6 @@
       "date": "",
       "driveFileId": "1SMZ6PHGs5-WJGRC2Yo4mFgV1Pm_Sti2Y",
       "coverImage": "covers/dubinsky-drury-yvette-dividing-time.jpg",
-      "pageCount": 0,
-      "featured": false,
-      "color": null
-    },
-    {
-      "id": "shaw-judith-off-the-wall",
-      "title": "Shaw Judith : Off The Wall",
-      "subtitle": "",
-      "category": "Exhibition",
-      "date": "",
-      "driveFileId": "11Ptrv3WTA5CAAQx4V5w4z7nbUGQzgERl",
-      "coverImage": "covers/shaw-judith-off-the-wall.jpg",
       "pageCount": 0,
       "featured": false,
       "color": null

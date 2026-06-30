@@ -152,16 +152,7 @@ const Library = (() => {
   }
 
   function _updateCount(n) {
-    let el = document.getElementById('library-count');
-    if (!el) {
-      // Insert library toolbar before catalog grid
-      const toolbar = document.createElement('div');
-      toolbar.className = 'library-toolbar';
-      toolbar.innerHTML = `<p class="library-count" id="library-count"></p>`;
-      _gridEl.parentNode.insertBefore(toolbar, _gridEl);
-      el = document.getElementById('library-count');
-    }
-    el.innerHTML = `<strong>${n}</strong> catalog${n === 1 ? '' : 's'}`;
+    // count display removed
   }
 
   // ──────────────────────────────────────────────
