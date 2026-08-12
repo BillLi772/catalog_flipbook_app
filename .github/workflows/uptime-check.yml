@@ -1,0 +1,35 @@
+name: Uptime check
+
+# Verifies the Cloudflare Worker (which serves every thumbnail and PDF) is
+# alive. If it goes down, this job fails and GitHub emails the repo owner.
+on:
+  schedule:
+    - cron: '0 13 * * *'   # daily, 13:00 UTC
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Worker responds with an image
+        run: |
+          URL="https://flipbook.liwenruixxx.workers.dev/?thumbnail=1e7Y5sCgp3foWHfrd_VMhZGG_YMU6NA9T"
+          for attempt in 1 2 3; do
+            code=$(curl -s -o /tmp/thumb.bin -w '%{http_code}' --max-time 30 "$URL" || echo 000)
+            type=$(file -b --mime-type /tmp/thumb.bin 2>/dev/null || echo unknown)
+            size=$(wc -c < /tmp/thumb.bin | tr -d ' ')
+            echo "attempt $attempt: HTTP $code, $type, ${size} bytes"
+            if [ "$code" = "200" ] && [ "${type#image/}" != "$type" ]; then
+              echo "Worker healthy."
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::Cloudflare Worker is not serving images. Redeploy with: npx wrangler deploy"
+          exit 1
+
+      - name: Catalog site responds
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 https://catalog-flipbook-app.pages.dev/)
+          echo "site: HTTP $code"
+          [ "$code" = "200" ] || { echo "::error::Catalog site returned $code"; exit 1; }

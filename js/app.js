@@ -86,7 +86,7 @@ const App = (() => {
 
     await Library.init();
 
-    document.title = 'Catalog Library';
+    document.title = 'Publications — Bruno David Gallery';
   }
 
   async function _showReader(slug, page) {

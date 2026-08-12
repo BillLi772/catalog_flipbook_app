@@ -2,6 +2,34 @@
  * library.js — Catalog library page rendering, filtering, and search.
  */
 const Library = (() => {
+  // ──────────────────────────────────────────────
+  // Artist name normalisation
+  //
+  // Drive filenames store names surname-first ("Shaw Judith"). For display we
+  // flip them to natural order ("Judith Shaw"). The default rule — treat the
+  // first token as the surname and move it to the end — is right for most
+  // names, so only the exceptions below need spelling out.
+  // ──────────────────────────────────────────────
+
+  // Entries that aren't personal names and must never be flipped.
+  const NON_PERSON = new Set([
+    'AND OR', 'Group Exhibition', 'LA Artists', 'MOPA', 'Grasshopper',
+  ]);
+
+  // Names the default rule gets wrong (compound surnames, particles).
+  const NAME_OVERRIDES = {
+    'Briceno Quinn Antonio': 'Antonio Briceno Quinn',
+    'Dubinsky Drury Yvette': 'Yvette Drury Dubinsky',
+    'Ghazi Asadollahi Sara': 'Sara Ghazi Asadollahi',
+    'Rubin De La Borbolla Chris': 'Chris Rubin de la Borbolla',
+  };
+
+  // Spelling variants in Drive that refer to the same artist.
+  const NAME_ALIASES = {
+    'Mcelwee Van': 'McElwee Van',
+    'Schwall Char': 'Schwall Charles',
+  };
+
   // Module state
   let _allCatalogs = [];
   let _filtered = [];
@@ -163,16 +191,16 @@ const Library = (() => {
     const color = c.color || '#e0dbd4';
     const hasDriveId = c.driveFileId && !c.driveFileId.startsWith('sample_');
     const thumb = hasDriveId ? _thumbUrl(c.driveFileId) : null;
-    // Split "Artist : Catalog Name" — only if separator exists
-    const hasSep = c.title.includes(' : ');
-    const artistLabel = hasSep ? c.title.split(' : ')[0].trim() : null;
-    const catalogTitle = hasSep ? c.title.split(' : ').slice(1).join(' : ').trim() : c.title;
+    // Split "Artist : Catalog Name", with the artist flipped to natural order
+    const { artist: artistLabel, catalog: catalogTitle } = splitTitle(c.title);
+    const label = displayTitle(c.title);
     return `
-      <article class="hero-card" tabindex="0" role="button" aria-label="Open ${_esc(c.title)}">
+      <article class="hero-card" tabindex="0" role="button" aria-label="Open ${_esc(label)}">
         <div class="hero-image-wrap">
-          ${thumb ? `<img class="cover-img" src="${_esc(thumb)}" alt="" loading="eager" aria-hidden="true">` : ''}
+          ${thumb ? `<img class="cover-img" src="${_esc(thumb)}" alt="" loading="eager"
+                          decoding="async" fetchpriority="high" aria-hidden="true">` : ''}
           <div class="hero-cover-placeholder" style="background-color:${_esc(color)}${!thumb ? ';position:relative' : ''}">
-            <span class="placeholder-title">${_esc(c.title)}</span>
+            <span class="placeholder-title">${_esc(label)}</span>
           </div>
         </div>
         <div class="hero-info" style="border-left: 3px solid ${_esc(color)}">
@@ -198,16 +226,24 @@ const Library = (() => {
     const color = c.color || '#e0dbd4';
     const hasDriveId = c.driveFileId && !c.driveFileId.startsWith('sample_');
     const thumb = hasDriveId ? _thumbUrl(c.driveFileId) : null;
+    const { artist, catalog } = splitTitle(c.title);
+    const label = displayTitle(c.title);
+    // The first row is above the fold on most screens — load those eagerly so
+    // the page never opens to a wall of placeholders.
+    const eager = index < 4;
     return `
       <article class="catalog-card" data-id="${_esc(c.id)}" tabindex="0"
-               role="button" aria-label="Open ${_esc(c.title)}">
+               role="button" aria-label="Open ${_esc(label)}">
         <div class="card-image-wrap">
-          ${thumb ? `<img class="cover-img" src="${_esc(thumb)}" alt="" loading="eager" aria-hidden="true">` : ''}
+          ${thumb ? `<img class="cover-img" src="${_esc(thumb)}" alt="" aria-hidden="true"
+                          loading="${eager ? 'eager' : 'lazy'}" decoding="async"
+                          ${eager ? 'fetchpriority="high"' : ''}>` : ''}
           <div class="card-cover-placeholder" style="background-color:${_esc(color)}${!thumb ? ';position:relative' : ''}">
-            <span class="placeholder-title">${_esc(c.title)}</span>
+            <span class="placeholder-title">${_esc(label)}</span>
           </div>
         </div>
-        <h3 class="card-title">${_esc(c.title)}</h3>
+        ${artist ? `<p class="card-artist">${_esc(artist)}</p>` : ''}
+        <h3 class="card-title">${_esc(catalog)}</h3>
         ${c.subtitle ? `<p class="card-subtitle">${_esc(c.subtitle)}</p>` : ''}
         ${(c.date || (c.pageCount > 0)) ? `<p class="card-meta">${[_formatDate(c.date), c.pageCount > 0 ? `${c.pageCount} pp` : ''].filter(Boolean).join(' · ')}</p>` : ''}
       </article>`;
@@ -238,10 +274,12 @@ const Library = (() => {
     // Search
     if (_searchQuery) {
       const q = _searchQuery.toLowerCase();
+      // Match the stored title as well as the flipped display form, so both
+      // "Shaw Judith" and "Judith Shaw" find the same catalogs.
       results = results.filter(c =>
         c.title.toLowerCase().includes(q) ||
-        (c.subtitle || '').toLowerCase().includes(q) ||
-        c.category.toLowerCase().includes(q)
+        displayTitle(c.title).toLowerCase().includes(q) ||
+        (c.subtitle || '').toLowerCase().includes(q)
       );
     }
 
@@ -249,9 +287,41 @@ const Library = (() => {
     _sortAndRender();
   }
 
-  /** Extract artist name from title (text before ' : ', or full title). */
+  /** Extract the raw, surname-first artist key from a title. Used for grouping. */
   function _artistName(c) {
-    return (c.title.includes(' : ') ? c.title.split(' : ')[0] : c.title).trim();
+    const raw = (c.title.includes(' : ') ? c.title.split(' : ')[0] : c.title).trim();
+    return NAME_ALIASES[raw] || raw;
+  }
+
+  /** True when a name is a group show / institution rather than a person. */
+  function _isGroupName(name) {
+    return NON_PERSON.has(name);
+  }
+
+  /** Turn a surname-first key ("Shaw Judith") into natural order ("Judith Shaw"). */
+  function displayArtist(name) {
+    const key = NAME_ALIASES[name] || name;
+    if (NON_PERSON.has(key)) return key;
+    if (NAME_OVERRIDES[key]) return NAME_OVERRIDES[key];
+    const parts = key.split(/\s+/);
+    if (parts.length < 2) return key;
+    return [...parts.slice(1), parts[0]].join(' ');
+  }
+
+  /** Split a raw title into { artist, catalog } with the artist in natural order. */
+  function splitTitle(title) {
+    if (!title.includes(' : ')) return { artist: '', catalog: title.trim() };
+    const [rawArtist, ...rest] = title.split(' : ');
+    return {
+      artist: displayArtist(NAME_ALIASES[rawArtist.trim()] || rawArtist.trim()),
+      catalog: rest.join(' : ').trim(),
+    };
+  }
+
+  /** Full title with the artist name flipped into natural order. */
+  function displayTitle(title) {
+    const { artist, catalog } = splitTitle(title);
+    return artist ? `${artist} : ${catalog}` : catalog;
   }
 
   function _setupSearch() {
@@ -281,17 +351,30 @@ const Library = (() => {
     const sel = document.getElementById('artist-filter');
     if (!sel) return;
 
-    // Populate options from catalog data (alphabetical, deduplicated)
-    const names = [...new Set(
-      _allCatalogs.map(c => _artistName(c))
-    )].sort((a, b) => a.localeCompare(b));
+    // Populate options from catalog data (deduplicated), splitting personal
+    // names from group shows so "AND OR" doesn't sit among the artists.
+    const names = [...new Set(_allCatalogs.map(c => _artistName(c)))];
+    const people = names.filter(n => !_isGroupName(n));
+    const groups = names.filter(_isGroupName);
 
-    names.forEach(name => {
-      const opt = document.createElement('option');
-      opt.value = name;
-      opt.textContent = name;
-      sel.appendChild(opt);
-    });
+    const addGroup = (label, list) => {
+      if (list.length === 0) return;
+      const og = document.createElement('optgroup');
+      og.label = label;
+      list
+        .map(name => ({ name, display: displayArtist(name) }))
+        .sort((a, b) => a.display.localeCompare(b.display))
+        .forEach(({ name, display }) => {
+          const opt = document.createElement('option');
+          opt.value = name;
+          opt.textContent = display;
+          og.appendChild(opt);
+        });
+      sel.appendChild(og);
+    };
+
+    addGroup('Artists', people);
+    addGroup('Group & Special Exhibitions', groups);
 
     sel.addEventListener('change', () => {
       _artistFilter = sel.value;
@@ -455,5 +538,5 @@ const Library = (() => {
     return [...sameArtist, ...shuffled].slice(0, n);
   }
 
-  return { init, destroy, getCatalog, getRelated };
+  return { init, destroy, getCatalog, getRelated, displayArtist, displayTitle, splitTitle };
 })();

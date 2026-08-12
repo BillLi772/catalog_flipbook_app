@@ -52,9 +52,10 @@ const Reader = (() => {
     document.getElementById('library-view').hidden = true;
     document.getElementById('site-header').hidden = true;
 
-    // Set title
-    $title.textContent = catalog.title;
-    document.title = `${catalog.title} — Catalog`;
+    // Set title (artist shown in natural order)
+    const displayed = Library.displayTitle(catalog.title);
+    $title.textContent = displayed;
+    document.title = `${displayed} — Bruno David Gallery`;
 
     // Show loading overlay
     const loadingOverlay = _createLoadingOverlay();
@@ -108,7 +109,7 @@ const Reader = (() => {
     document.getElementById('reader-view').hidden = true;
     document.getElementById('library-view').hidden = false;
     document.getElementById('site-header').hidden = false;
-    document.title = 'Catalog Library';
+    document.title = 'Publications — Bruno David Gallery';
 
     // Clear book canvases
     if ($canvasLeft) { $canvasLeft.width = 0; $canvasLeft.height = 0; }
@@ -592,11 +593,9 @@ const Reader = (() => {
     if (related.length === 0) return;
 
     $relatedGrid.innerHTML = related.map(c => {
-      const parts = c.title.includes(' : ') ? c.title.split(' : ') : [c.title, ''];
-      const artist = parts[0].trim();
-      const catalogName = parts.slice(1).join(' : ').trim();
+      const { artist, catalog: catalogName } = Library.splitTitle(c.title);
       return `
-      <div class="related-card" data-id="${c.id}" role="button" tabindex="0" aria-label="Open ${_escHtml(c.title)}">
+      <div class="related-card" data-id="${c.id}" role="button" tabindex="0" aria-label="Open ${_escHtml(Library.displayTitle(c.title))}">
         ${catalogName ? `<div class="related-card-title">${_escHtml(catalogName)}</div>` : ''}
         <div class="related-card-cat">${_escHtml(artist)}</div>
       </div>`;
