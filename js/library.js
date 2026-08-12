@@ -16,18 +16,21 @@ const Library = (() => {
     'AND OR', 'Group Exhibition', 'LA Artists', 'MOPA', 'Grasshopper',
   ]);
 
-  // Names the default rule gets wrong (compound surnames, particles).
+  // Names the default rule gets wrong (compound surnames, particles) and names
+  // whose accents the Drive filenames drop. Spellings follow the artist pages
+  // on brunodavidgallery.com.
   const NAME_OVERRIDES = {
-    'Briceno Quinn Antonio': 'Antonio Briceno Quinn',
+    'Briceno Quinn Antonio': 'Quinn Antonio Briceño',
     'Dubinsky Drury Yvette': 'Yvette Drury Dubinsky',
     'Ghazi Asadollahi Sara': 'Sara Ghazi Asadollahi',
     'Rubin De La Borbolla Chris': 'Chris Rubin de la Borbolla',
+    'Muzina Danielle': 'Danielle Mužina',
   };
 
   // Spelling variants in Drive that refer to the same artist.
   const NAME_ALIASES = {
     'Mcelwee Van': 'McElwee Van',
-    'Schwall Char': 'Schwall Charles',
+    'Schwall Charles': 'Schwall Char',
   };
 
   // Module state
