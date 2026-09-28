@@ -7,6 +7,11 @@ on:
   # Allow running manually from the GitHub Actions tab
   workflow_dispatch:
 
+# The job pushes catalogs.json back to main, and re-enables itself (below).
+permissions:
+  contents: write
+  actions: write
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -21,7 +26,8 @@ jobs:
 
       - name: Rebuild catalogs.json from Google Drive
         env:
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          # The repo secret was saved as GOOGLEAPIKEY; accept either spelling.
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY || secrets.GOOGLEAPIKEY }}
         run: node scripts/build-catalog.js
 
       - name: Commit and push if catalogs changed
@@ -35,3 +41,12 @@ jobs:
             git commit -m "chore: weekly catalog sync $(date +'%Y-%m-%d')"
             git push
           fi
+
+      # GitHub switches off scheduled workflows after 60 days without a commit.
+      # Weeks with no new catalogs make no commit, so re-enable explicitly to
+      # reset that timer — otherwise the sync silently stops again.
+      - name: Keep schedule alive
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/update-catalogs.yml/enable"

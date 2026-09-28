@@ -1,6 +1,6 @@
 {
   "folderUrl": "https://drive.google.com/drive/folders/1U2_lMcMB8IxVL-1HVIHtF8N9FarJ18aL",
-  "generated": "2026-06-30T17:54:57.718Z",
+  "generated": "2026-09-28T21:11:36.717Z",
   "catalogs": [
     {
       "id": "shaw-judith-off-the-wall",
@@ -8,10 +8,46 @@
       "subtitle": "",
       "category": "Exhibition",
       "date": "",
-      "driveFileId": "1LSyvGZQ2n_fKUFn9dtBSvgb-L4Xkjwuy",
+      "driveFileId": "1KycpU0zLwwWErKmPUp-tVAmiZx9Eb6FF",
       "coverImage": "covers/shaw-judith-off-the-wall.jpg",
       "pageCount": 0,
       "featured": true,
+      "color": null
+    },
+    {
+      "id": "chesla-joe-weighted",
+      "title": "Chesla Joe : Weighted",
+      "subtitle": "",
+      "category": "Exhibition",
+      "date": "",
+      "driveFileId": "1BLaWEI9D7mW3oWd7zY6VicPBo8mnqr6V",
+      "coverImage": "covers/chesla-joe-weighted.jpg",
+      "pageCount": 0,
+      "featured": false,
+      "color": null
+    },
+    {
+      "id": "and-or-group-exhibition",
+      "title": "AND / OR : Group Exhibition",
+      "subtitle": "",
+      "category": "Exhibition",
+      "date": "",
+      "driveFileId": "1qQBYDJYOCjVpC0yEo5axSjp6HpZ66AYq",
+      "coverImage": "covers/and-or-group-exhibition.jpg",
+      "pageCount": 0,
+      "featured": false,
+      "color": null
+    },
+    {
+      "id": "dubinsky-drury-yvette-reconstruct",
+      "title": "Dubinsky Drury Yvette : Reconstruct",
+      "subtitle": "",
+      "category": "Exhibition",
+      "date": "",
+      "driveFileId": "1ECatAd6RrhOaS_BNK1GbepSksPv_lMI1",
+      "coverImage": "covers/dubinsky-drury-yvette-reconstruct.jpg",
+      "pageCount": 0,
+      "featured": false,
       "color": null
     },
     {
@@ -34,18 +70,6 @@
       "date": "",
       "driveFileId": "1Xs4QDAgyOPAj_j1ZlG2Vf3HJ9HPdY4-S",
       "coverImage": "covers/dubinsky-drury-yvette-traveling.jpg",
-      "pageCount": 0,
-      "featured": false,
-      "color": null
-    },
-    {
-      "id": "dubinsky-drury-yvette-reconstruct",
-      "title": "Dubinsky Drury Yvette : Reconstruct",
-      "subtitle": "",
-      "category": "Exhibition",
-      "date": "",
-      "driveFileId": "1ttzO2baFSae7unOQf8MyfR0xIDvXnVgW",
-      "coverImage": "covers/dubinsky-drury-yvette-reconstruct.jpg",
       "pageCount": 0,
       "featured": false,
       "color": null
@@ -771,18 +795,6 @@
       "color": null
     },
     {
-      "id": "chesla-joe-weighted",
-      "title": "Chesla Joe : Weighted",
-      "subtitle": "",
-      "category": "Exhibition",
-      "date": "",
-      "driveFileId": "1HUAGti3QkKTrk0k4jjRJpTC7esuq4anw",
-      "coverImage": "covers/chesla-joe-weighted.jpg",
-      "pageCount": 0,
-      "featured": false,
-      "color": null
-    },
-    {
       "id": "burson-bunny-everything-that-was-still-is",
       "title": "Burson Bunny : Everything That Was...Still Is",
       "subtitle": "",
@@ -790,18 +802,6 @@
       "date": "",
       "driveFileId": "19HqpnQqX02S94IltzJLosc7BXkHVixFp",
       "coverImage": "covers/burson-bunny-everything-that-was-still-is.jpg",
-      "pageCount": 0,
-      "featured": false,
-      "color": null
-    },
-    {
-      "id": "and-or-group-exhibition",
-      "title": "AND OR : Group Exhibition",
-      "subtitle": "",
-      "category": "Exhibition",
-      "date": "",
-      "driveFileId": "1qQBYDJYOCjVpC0yEo5axSjp6HpZ66AYq",
-      "coverImage": "covers/and-or-group-exhibition.jpg",
       "pageCount": 0,
       "featured": false,
       "color": null

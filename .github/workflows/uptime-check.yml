@@ -7,6 +7,9 @@ on:
     - cron: '0 13 * * *'   # daily, 13:00 UTC
   workflow_dispatch:
 
+permissions:
+  actions: write
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -33,3 +36,37 @@ jobs:
           code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 https://catalog-flipbook-app.pages.dev/)
           echo "site: HTTP $code"
           [ "$code" = "200" ] || { echo "::error::Catalog site returned $code"; exit 1; }
+
+      # Catalogues are linked by Drive file ID. Deleting a PDF and re-uploading
+      # it gives it a new ID, which breaks the live link until the next sync.
+      - name: Every live catalogue still exists in Drive
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY || secrets.GOOGLEAPIKEY }}
+        run: |
+          python3 - <<'PY'
+          import json, os, sys, urllib.request, urllib.parse
+          key, folder = os.environ['GOOGLE_API_KEY'], '1U2_lMcMB8IxVL-1HVIHtF8N9FarJ18aL'
+          ids, token = set(), ''
+          while True:
+              q = {'key': key, 'pageSize': 1000, 'fields': 'nextPageToken,files(id)',
+                   'q': f"'{folder}' in parents and mimeType='application/pdf' and trashed=false"}
+              if token: q['pageToken'] = token
+              d = json.load(urllib.request.urlopen('https://www.googleapis.com/drive/v3/files?' + urllib.parse.urlencode(q)))
+              ids |= {f['id'] for f in d.get('files', [])}
+              token = d.get('nextPageToken')
+              if not token: break
+          # Cloudflare rejects Python's default User-Agent
+          req = urllib.request.Request('https://catalog-flipbook-app.pages.dev/catalogs.json',
+                                       headers={'User-Agent': 'catalog-uptime-check'})
+          live = json.load(urllib.request.urlopen(req))['catalogs']
+          broken = [c['title'] for c in live if c['driveFileId'] not in ids]
+          print(f'{len(live)} live catalogues, {len(ids)} PDFs in Drive, {len(broken)} broken')
+          for t in broken: print(f'::error::Broken on site (file replaced or deleted in Drive): {t}')
+          sys.exit(1 if broken else 0)
+          PY
+
+      - name: Keep schedule alive
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/uptime-check.yml/enable"
