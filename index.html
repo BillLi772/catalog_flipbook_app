@@ -226,7 +226,8 @@
     }
     // Configuration — update WORKER_URL to your deployed Cloudflare Worker
     window.APP_CONFIG = {
-      workerUrl: 'https://flipbook.liwenruixxx.workers.dev',
+      // PDF proxy, served by this site (functions/api/pdf.js), not a separate Worker
+      workerUrl: '/api/pdf',
       driveFolderId: '1U2_lMcMB8IxVL-1HVIHtF8N9FarJ18aL',
     };
   </script>
