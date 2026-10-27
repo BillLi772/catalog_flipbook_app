@@ -14,22 +14,35 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - name: Worker responds with an image
+      # The Worker now only serves the PDFs (covers load straight from Google).
+      # If it fails, readers still see the catalogue in Google Drive's viewer,
+      # but the flipbook is off, so this job fails and GitHub emails the owner.
+      - name: Worker serves a PDF
         run: |
-          URL="https://flipbook.liwenruixxx.workers.dev/?thumbnail=1e7Y5sCgp3foWHfrd_VMhZGG_YMU6NA9T"
+          URL="https://flipbook.liwenruixxx.workers.dev/?id=1e7Y5sCgp3foWHfrd_VMhZGG_YMU6NA9T"
           for attempt in 1 2 3; do
-            code=$(curl -s -o /tmp/thumb.bin -w '%{http_code}' --max-time 30 "$URL" || echo 000)
-            type=$(file -b --mime-type /tmp/thumb.bin 2>/dev/null || echo unknown)
-            size=$(wc -c < /tmp/thumb.bin | tr -d ' ')
-            echo "attempt $attempt: HTTP $code, $type, ${size} bytes"
-            if [ "$code" = "200" ] && [ "${type#image/}" != "$type" ]; then
+            code=$(curl -s -o /tmp/head.bin -w '%{http_code}' --max-time 60 -H 'Range: bytes=0-1023' "$URL" || echo 000)
+            magic=$(head -c 5 /tmp/head.bin 2>/dev/null || true)
+            echo "attempt $attempt: HTTP $code, starts with '$magic'"
+            if { [ "$code" = "206" ] || [ "$code" = "200" ]; } && [ "$magic" = "%PDF-" ]; then
               echo "Worker healthy."
               exit 0
             fi
+            if grep -qi "exceeded\|1027" /tmp/head.bin 2>/dev/null; then
+              echo "::error::Cloudflare Worker is over its daily free request limit (100,000). It resets at 00:00 UTC."
+              exit 1
+            fi
             sleep 15
           done
-          echo "::error::Cloudflare Worker is not serving images. Redeploy with: npx wrangler deploy"
+          echo "::error::Cloudflare Worker is not serving PDFs. Check Workers & Pages in the Cloudflare dashboard, or redeploy with: npx wrangler deploy"
           exit 1
+
+      - name: Covers load from Google
+        run: |
+          code=$(curl -s -L -o /tmp/cover.bin -w '%{http_code}' --max-time 30 "https://lh3.googleusercontent.com/d/1e7Y5sCgp3foWHfrd_VMhZGG_YMU6NA9T=w600" || echo 000)
+          type=$(file -b --mime-type /tmp/cover.bin 2>/dev/null || echo unknown)
+          echo "cover: HTTP $code, $type"
+          [ "$code" = "200" ] && [ "${type#image/}" != "$type" ] || { echo "::error::Cover images are not loading from Google (check the Drive files are shared with anyone with the link)"; exit 1; }
 
       - name: Catalog site responds
         run: |
