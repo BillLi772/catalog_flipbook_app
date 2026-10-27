@@ -35,7 +35,9 @@ class PDFRenderer {
       disableRange: false,
       disableStream: false,
       disableAutoFetch: true,  // Only fetch chunks needed for the requested page
-      rangeChunkSize: 65536,   // 64 KB chunks
+      // 2 MB chunks. Each chunk is one Worker request; 64 KB chunks meant hundreds
+      // of requests per catalogue and used up the Worker's free daily limit.
+      rangeChunkSize: 2097152,
     });
 
     // Progress callback
