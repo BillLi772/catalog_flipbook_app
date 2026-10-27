@@ -86,14 +86,30 @@ const Reader = (() => {
       _preloadAdjacent(_currentSpread);
 
     } catch (err) {
-      loadingOverlay.innerHTML = `
-        <div class="pdf-error">
-          <strong>Unable to load PDF</strong>
-          <p>The catalog could not be loaded. This may be due to CORS restrictions on direct Google Drive links.</p>
-          <p style="margin-top:0.5rem;font-size:0.75rem;opacity:0.6">Configure a Cloudflare Worker proxy in <code>window.APP_CONFIG.workerUrl</code> to enable PDF loading.</p>
-          <p style="margin-top:0.75rem;font-size:0.75rem;color:#d4002a">${err.message}</p>
-        </div>`;
+      // The flipbook could not get the PDF (proxy down or over its daily limit).
+      // Show the catalogue in Google Drive's own viewer instead of an error, so
+      // visitors can always read it. The reason goes to the console for us.
+      console.warn('[reader] Flipbook load failed, using Google Drive viewer:', err && err.message);
+      _showDriveFallback(catalog, loadingOverlay);
     }
+  }
+
+  function _showDriveFallback(catalog, overlay) {
+    if (overlay) overlay.remove();
+    if (!catalog || !catalog.driveFileId) return;
+    // Fill the whole reading area; the flipbook controls don't apply to Drive's viewer
+    const stage = document.getElementById('reader-stage') || $viewport;
+    if (getComputedStyle(stage).position === 'static') stage.style.position = 'relative';
+    const toolbar = document.getElementById('reader-toolbar');
+    if (toolbar) toolbar.style.visibility = 'hidden';
+    const frame = document.createElement('iframe');
+    frame.className = 'drive-fallback';
+    frame.src = `https://drive.google.com/file/d/${encodeURIComponent(catalog.driveFileId)}/preview`;
+    frame.title = Library.displayTitle(catalog.title);
+    frame.allow = 'fullscreen';
+    frame.setAttribute('allowfullscreen', '');
+    frame.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;z-index:5';
+    stage.appendChild(frame);
   }
 
   function destroy() {
@@ -118,6 +134,9 @@ const Reader = (() => {
 
     // Remove any leftover flip cards
     document.querySelectorAll('.flip-card').forEach(el => el.remove());
+    document.querySelectorAll('.drive-fallback').forEach(el => el.remove());
+    const toolbar = document.getElementById('reader-toolbar');
+    if (toolbar) toolbar.style.visibility = '';
 
     // Hide related
     if ($relatedSection) $relatedSection.hidden = true;
