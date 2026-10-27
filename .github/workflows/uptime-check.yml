@@ -1,7 +1,8 @@
 name: Uptime check
 
-# Verifies the Cloudflare Worker (which serves every thumbnail and PDF) is
-# alive. If it goes down, this job fails and GitHub emails the repo owner.
+# Verifies the catalog site, its PDF proxy (functions/api/pdf.js) and the
+# Google cover images. If anything breaks, this job fails and GitHub emails
+# the repo owner. Every step runs, so one failure does not hide another.
 on:
   schedule:
     - cron: '0 13 * * *'   # daily, 13:00 UTC
@@ -14,30 +15,30 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      # The Worker now only serves the PDFs (covers load straight from Google).
-      # If it fails, readers still see the catalogue in Google Drive's viewer,
-      # but the flipbook is off, so this job fails and GitHub emails the owner.
-      - name: Worker serves a PDF
+      # The PDF proxy is part of the Pages site. If it fails, readers still see
+      # the catalogue in Google Drive's viewer, but the flipbook is off.
+      - name: PDF proxy serves a PDF
         run: |
-          URL="https://flipbook.liwenruixxx.workers.dev/?id=1e7Y5sCgp3foWHfrd_VMhZGG_YMU6NA9T"
+          URL="https://catalog-flipbook-app.pages.dev/api/pdf?id=1e7Y5sCgp3foWHfrd_VMhZGG_YMU6NA9T"
           for attempt in 1 2 3; do
             code=$(curl -s -o /tmp/head.bin -w '%{http_code}' --max-time 60 -H 'Range: bytes=0-1023' "$URL" || echo 000)
             magic=$(head -c 5 /tmp/head.bin 2>/dev/null || true)
             echo "attempt $attempt: HTTP $code, starts with '$magic'"
             if { [ "$code" = "206" ] || [ "$code" = "200" ]; } && [ "$magic" = "%PDF-" ]; then
-              echo "Worker healthy."
+              echo "PDF proxy healthy."
               exit 0
             fi
             if grep -qi "exceeded\|1027" /tmp/head.bin 2>/dev/null; then
-              echo "::error::Cloudflare Worker is over its daily free request limit (100,000). It resets at 00:00 UTC."
+              echo "::error::Cloudflare is over its daily free request limit for Functions (100,000). It resets at 00:00 UTC."
               exit 1
             fi
             sleep 15
           done
-          echo "::error::Cloudflare Worker is not serving PDFs. Check Workers & Pages in the Cloudflare dashboard, or redeploy with: npx wrangler deploy"
+          echo "::error::The PDF proxy (/api/pdf) is not serving PDFs. Check the latest Pages deployment in the Cloudflare dashboard, and that the Drive files are shared with anyone with the link."
           exit 1
 
       - name: Covers load from Google
+        if: always()
         run: |
           code=$(curl -s -L -o /tmp/cover.bin -w '%{http_code}' --max-time 30 "https://lh3.googleusercontent.com/d/1e7Y5sCgp3foWHfrd_VMhZGG_YMU6NA9T=w600" || echo 000)
           type=$(file -b --mime-type /tmp/cover.bin 2>/dev/null || echo unknown)
@@ -45,6 +46,7 @@ jobs:
           [ "$code" = "200" ] && [ "${type#image/}" != "$type" ] || { echo "::error::Cover images are not loading from Google (check the Drive files are shared with anyone with the link)"; exit 1; }
 
       - name: Catalog site responds
+        if: always()
         run: |
           code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 https://catalog-flipbook-app.pages.dev/)
           echo "site: HTTP $code"
@@ -53,6 +55,7 @@ jobs:
       # Catalogues are linked by Drive file ID. Deleting a PDF and re-uploading
       # it gives it a new ID, which breaks the live link until the next sync.
       - name: Every live catalogue still exists in Drive
+        if: always()
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY || secrets.GOOGLEAPIKEY }}
         run: |
