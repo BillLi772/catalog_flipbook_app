@@ -193,7 +193,7 @@ const Library = (() => {
   function _heroCardHTML(c) {
     const color = c.color || '#e0dbd4';
     const hasDriveId = c.driveFileId && !c.driveFileId.startsWith('sample_');
-    const thumb = hasDriveId ? _thumbUrl(c.driveFileId) : null;
+    const thumb = hasDriveId ? _thumbUrl(c.driveFileId, 1200) : null;
     // Split "Artist : Catalog Name", with the artist flipped to natural order
     const { artist: artistLabel, catalog: catalogTitle } = splitTitle(c.title);
     const label = displayTitle(c.title);
@@ -218,11 +218,11 @@ const Library = (() => {
       </article>`;
   }
 
-  function _thumbUrl(driveFileId) {
-    const cfg = window.APP_CONFIG || {};
-    const workerUrl = cfg.workerUrl || '';
-    if (!workerUrl || workerUrl.includes('your-worker')) return null;
-    return `${workerUrl}?thumbnail=${encodeURIComponent(driveFileId)}`;
+  // Covers come straight from Google's image server (the files are public), not
+  // through the Cloudflare Worker: images need no CORS, and sending ~200 covers
+  // per visit through the Worker used up its 100,000 requests/day free limit.
+  function _thumbUrl(driveFileId, width = 600) {
+    return `https://lh3.googleusercontent.com/d/${encodeURIComponent(driveFileId)}=w${width}`;
   }
 
   function _cardHTML(c, index) {
