@@ -1,6 +1,7 @@
 /**
  * selected.js — the top of the Publications page: the page title and
- * "Selected publications", a slow row of covers that drifts across the page.
+ * "Selected publications", a slow row of large covers that drifts across the page.
+ * The covers stand alone; the artist and title of one appear when it is pointed at.
  *
  * Which catalogues: first those by the artists on view at the gallery right now
  * (read from the Exhibitions page through /api/current, see functions/api/current.js),
@@ -8,13 +9,11 @@
  * If the Exhibitions page cannot be read, the row is simply all random.
  *
  * The row moves on its own, slowly. It eases to a stop while the pointer is over
- * it or a cover has keyboard focus, can be dragged or swiped sideways (a flick
- * coasts on a little), and has a Pause / Play button. People who have asked their
- * device for less motion get a still row they can drag. Clicking a cover opens
- * that catalogue in the reader.
+ * it or a cover has keyboard focus, and can be dragged or swiped sideways (a flick
+ * coasts on a little). People who have asked their device for less motion get a
+ * still row they can drag. Clicking a cover opens that catalogue in the reader.
  *
- * library.js builds it once (see _renderHero there) and hides its container
- * while a search or an artist filter is active:
+ * library.js builds it once (see _renderHero there):
  *
  *   Selected.render(containerEl, catalogs, options)  builds the section
  *   Selected.prettyTitle(text)                       "Off The Wall" -> "Off the Wall"
@@ -28,7 +27,6 @@ const Selected = (() => {
     speed: 26,             // how fast the row drifts, in pixels per second
     title: 'Publications',
     label: 'Selected publications',
-    listLabel: 'All publications',
     showsUrl: '/api/current',   // answers { shows: [{ artist, title }] }; '' to skip
     coverUrl: (c, w) => `https://lh3.googleusercontent.com/d/${encodeURIComponent(c.driveFileId)}=w${w}`,
     readPath: c => `/catalog/${encodeURIComponent(c.id)}`,
@@ -39,13 +37,17 @@ const Selected = (() => {
 
   const SHOWS_KEY = 'bdg-on-view-v1';       // remembered answer from /api/current
   const SHOWS_FRESH = 6 * 60 * 60 * 1000;   // ask again after six hours
+  // Cover images are offered in three widths; the browser takes the one that suits the screen.
+  // COVER_SIZES mirrors the cover width set in css/publications.css (--sp-w).
+  const COVER_WIDTHS = [480, 800, 1200];
+  const COVER_SIZES = '(min-width: 1405px) 427px, (max-width: 680px) 207px, 30.4vw';
   const SMALL_WORDS = new Set('a an and as at but by de des du en et for from in into la le of on or the to via with'.split(' '));
 
   let o = DEFAULTS;
-  let root, viewport, track, toggle;
+  let root, viewport, track;
   let step = 0, period = 0, count = 0, gutter = 0;     // geometry of one set of covers
   let offset = 0, pace = 0, raf = 0, last = 0;         // where the row is, how fast it is going now, the animation frame
-  let hover = false, byKeyboard = false, stopped = false, onScreen = true, holdUntil = 0, lastPress = 0;
+  let hover = false, byKeyboard = false, onScreen = true, holdUntil = 0, lastPress = 0;
   let drag = null, justDragged = false;
   let sizeWatch = null, viewWatch = null;
 
@@ -143,15 +145,21 @@ const Selected = (() => {
 
   function itemHTML(c, copy) {
     const p = parts(c);
+    // The caption under a cover is only shown while it is pointed at (and not at all on
+    // touch screens), so the link carries its name itself.
+    const name = p.artist ? `${p.artist}: ${p.title}` : p.title;
+    const srcset = COVER_WIDTHS.map(w => `${o.coverUrl(c, w)} ${w}w`).join(', ');
     return `
       <li class="sp-item"${copy ? ' aria-hidden="true"' : ''}>
-        <a class="sp-card" href="${esc(o.readPath(c))}" data-read draggable="false"${copy ? ' tabindex="-1"' : ''}>
+        <a class="sp-card" href="${esc(o.readPath(c))}" data-read draggable="false"${copy ? ' tabindex="-1"' : ` aria-label="${esc(name)}"`}>
           <span class="sp-cover">
             <span class="sp-ph" aria-hidden="true"><span>${esc(p.artist)}</span><b>${esc(p.title)}</b></span>
-            <img alt="" draggable="false" decoding="async" src="${esc(o.coverUrl(c, 600))}">
+            <img alt="" draggable="false" decoding="async" src="${esc(o.coverUrl(c, 800))}" srcset="${esc(srcset)}" sizes="${COVER_SIZES}">
           </span>
-          <span class="sp-name">${esc(p.artist || p.title)}</span>
-          ${p.artist ? `<span class="sp-sub">${esc(p.title)}</span>` : ''}
+          <span class="sp-caption" aria-hidden="true">
+            <span class="sp-name">${esc(p.artist || p.title)}</span>
+            ${p.artist ? `<span class="sp-sub">${esc(p.title)}</span>` : ''}
+          </span>
         </a>
       </li>`;
   }
@@ -165,23 +173,16 @@ const Selected = (() => {
       <section class="sp" aria-labelledby="sp-title">
         <div class="sp-inner">
           <h1 class="sp-title" id="sp-title">${esc(o.title)}</h1>
-          <div class="sp-row">
-            <h2 class="sp-label" id="sp-label">${esc(o.label)}</h2>
-            <button type="button" class="sp-toggle" aria-label="Pause the moving row" hidden>Pause</button>
-          </div>
+          <h2 class="sp-label" id="sp-label">${esc(o.label)}</h2>
         </div>
         <div class="sp-viewport" role="group" aria-labelledby="sp-label">
           <ul class="sp-track"></ul>
-        </div>
-        <div class="sp-inner">
-          <div class="sp-list-head"><h2 class="sp-label">${esc(o.listLabel)}</h2></div>
         </div>
       </section>`;
 
     root = container.querySelector('.sp');
     viewport = root.querySelector('.sp-viewport');
     track = root.querySelector('.sp-track');
-    toggle = root.querySelector('.sp-toggle');
 
     root.addEventListener('click', onClick, true);
     const overRow = e => { if (e.pointerType === 'mouse') hover = true; };
@@ -199,12 +200,6 @@ const Selected = (() => {
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onUp);
-    toggle.addEventListener('click', () => {
-      stopped = !stopped;
-      toggle.textContent = stopped ? 'Play' : 'Pause';
-      toggle.setAttribute('aria-label', stopped ? 'Play the moving row' : 'Pause the moving row');
-      run();
-    });
 
     loadShows().then(shows => {
       if (!root || !root.isConnected) return;
@@ -215,7 +210,7 @@ const Selected = (() => {
 
   /** Put the chosen covers in the row, measure it, and start it moving. */
   function fill(list) {
-    if (!list.length) { viewport.hidden = true; root.querySelector('.sp-row').hidden = true; return; }
+    if (!list.length) { viewport.hidden = true; root.querySelector('#sp-label').hidden = true; return; }
     count = list.length;
     track.dataset.ids = list.map(c => c.id).join(' ');
     track.innerHTML = list.map(c => itemHTML(c, false)).join('');
@@ -229,7 +224,6 @@ const Selected = (() => {
       viewWatch.observe(viewport);
     }
     measure();
-    toggle.hidden = reduced();
     root.classList.add('sp--ready');
     run();
   }
@@ -277,7 +271,7 @@ const Selected = (() => {
   /** A cover has the keyboard's focus (not merely the focus a click leaves behind). */
   const keyboardOnRow = () => byKeyboard && viewport.contains(document.activeElement);
   /** Is the row free to drift by itself? */
-  const free = () => onScreen && !stopped && !hover && !drag && !reduced() && !keyboardOnRow() && performance.now() > holdUntil;
+  const free = () => onScreen && !hover && !drag && !reduced() && !keyboardOnRow() && performance.now() > holdUntil;
 
   function run() {
     if (raf || !root) return;
@@ -404,7 +398,7 @@ const Selected = (() => {
     if (sizeWatch) { sizeWatch.disconnect(); sizeWatch = null; }
     if (viewWatch) { viewWatch.disconnect(); viewWatch = null; }
     if (raf) cancelAnimationFrame(raf);
-    raf = 0; period = 0; offset = 0; pace = 0; drag = null; hover = false; byKeyboard = false; stopped = false; onScreen = true;
+    raf = 0; period = 0; offset = 0; pace = 0; drag = null; hover = false; byKeyboard = false; onScreen = true;
     root = null;
   }
 

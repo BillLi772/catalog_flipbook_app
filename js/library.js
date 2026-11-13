@@ -134,8 +134,9 @@ const Library = (() => {
   }
 
   // The top of the page is the title and the "Selected publications" row
-  // (js/selected.js + css/publications.css). It is built once and then only
-  // shown or hidden: hidden whenever a search or an artist filter is active.
+  // (js/selected.js + css/publications.css). It is built once and stays where it
+  // is: search and the artist menu sit in the bar above the list and only change
+  // the list.
   function _renderHero() {
     if (typeof Selected === 'undefined' || !_allCatalogs.length) {   // no selected.js, or nothing to show: list only
       _heroEl.hidden = true;
@@ -148,8 +149,21 @@ const Library = (() => {
         navigate: path => App.navigate(path),
       });
     }
-    _heroEl.hidden = Boolean(_searchQuery || _artistFilter);
-    if (!_heroEl.hidden) Selected.restart();   // it rests while hidden
+    _heroEl.hidden = false;
+    Selected.restart();   // it rests while the library is hidden behind the reader
+  }
+
+  // The bar above the list (heading, search, artist menu) stays at the top of the
+  // window while the list is scrolled. When a search or a new artist changes the
+  // list from down there, bring the start of the results up under the bar, so the
+  // bar does not jump and the first result is the first thing seen.
+  function _showResultsFromTop() {
+    const bar = document.getElementById('list-bar');
+    const mark = document.getElementById('list-top');
+    if (!bar || !mark) return;
+    const pinnedAt = parseFloat(getComputedStyle(bar).top) || 0;    // 0, or negative where the heading tucks away (phones)
+    const start = mark.getBoundingClientRect().bottom + window.scrollY - pinnedAt;
+    if (window.scrollY > start) window.scrollTo(0, start);
   }
 
   function _renderGrid(sorted) {
@@ -312,6 +326,7 @@ const Library = (() => {
       timer = setTimeout(() => {
         _searchQuery = input.value.trim();
         _applyFilters();
+        _showResultsFromTop();
       }, 200);
     });
   }
@@ -354,9 +369,25 @@ const Library = (() => {
     addGroup('Artists', people);
     addGroup('Group & Special Exhibitions', groups);
 
+    // A menu is normally as wide as its longest name. Keep it as wide as the name
+    // it is showing, so the arrow sits beside the text.
+    let ruler;
+    const fit = () => {
+      const shown = sel.options[sel.selectedIndex];
+      const style = getComputedStyle(sel);
+      ruler = ruler || document.createElement('canvas').getContext('2d');
+      ruler.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+      const text = ruler.measureText(shown ? shown.textContent : '').width;
+      sel.style.width = `${Math.ceil(text + parseFloat(style.paddingLeft) + parseFloat(style.paddingRight) + 2)}px`;
+    };
+    fit();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);   // the web font measures differently
+
     sel.addEventListener('change', () => {
       _artistFilter = sel.value;
+      fit();
       _applyFilters();
+      _showResultsFromTop();
     });
   }
 
