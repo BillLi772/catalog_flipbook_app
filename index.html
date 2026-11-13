@@ -34,7 +34,7 @@
 
   <link rel="stylesheet" href="/css/style.css?v=12">
   <!-- The gallery site's type and lines, the Selected publications row, and the look of the list -->
-  <link rel="stylesheet" href="/css/publications.css?v=1">
+  <link rel="stylesheet" href="/css/publications.css?v=2">
 </head>
 <body>
 
@@ -48,20 +48,6 @@
         <a href="/" class="nav-link nav-link--home" aria-label="Publications home">Publications</a>
         <a href="https://www.lulu.com/spotlight/brunodavidgallerypublications" class="nav-link nav-link--purchase" target="_blank" rel="noopener noreferrer">Purchase Catalogs</a>
       </nav>
-      <div class="header-actions">
-        <label for="search-input" class="sr-only">Search catalogs</label>
-        <input
-          type="search"
-          id="search-input"
-          class="search-input"
-          placeholder="Search..."
-          aria-label="Search catalogs"
-          autocomplete="off"
-        >
-        <select id="artist-filter" class="sort-select" aria-label="Filter by artist">
-          <option value="">All artists</option>
-        </select>
-      </div>
     </div>
   </header>
 
@@ -77,9 +63,36 @@
       </div>
       <div id="library-content" hidden>
         <div id="hero-section" class="hero-section"></div>
-        <div id="catalog-grid" class="catalog-grid" role="list" aria-label="Catalog list"></div>
-        <div id="no-results" class="no-results" hidden>
-          <p>No catalogs match your search.</p>
+        <!-- The list's own bar: its heading, with search and the artist menu beside it.
+             It stays at the top of the window while the list is scrolled (css/publications.css). -->
+        <div id="list-top" class="list-top"></div>
+        <div id="list-bar" class="list-bar">
+          <div class="list-bar-inner">
+            <div class="list-bar-row">
+              <h2 class="sp-label list-bar-label" id="list-label">All publications</h2>
+              <div class="list-tools" role="search">
+                <label for="search-input" class="sr-only">Search catalogs</label>
+                <input
+                  type="search"
+                  id="search-input"
+                  class="search-input"
+                  placeholder="Search"
+                  aria-label="Search catalogs"
+                  autocomplete="off"
+                >
+                <select id="artist-filter" class="sort-select" aria-label="Filter by artist">
+                  <option value="">All artists</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- at least a window tall, so a short list of results can still sit right under the bar -->
+        <div class="list-body">
+          <div id="catalog-grid" class="catalog-grid" role="list" aria-labelledby="list-label"></div>
+          <div id="no-results" class="no-results" hidden>
+            <p>No catalogs match your search.</p>
+          </div>
         </div>
       </div>
     </section>
@@ -234,8 +247,8 @@
     };
   </script>
   <script src="/js/pdf-renderer.js?v=4"></script>
-  <script src="/js/selected.js?v=1"></script>
-  <script src="/js/library.js?v=20"></script>
+  <script src="/js/selected.js?v=2"></script>
+  <script src="/js/library.js?v=21"></script>
   <script src="/js/reader.js?v=8"></script>
   <script src="/js/app.js?v=6"></script>
 </body>
