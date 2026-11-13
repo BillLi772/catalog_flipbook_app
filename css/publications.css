@@ -20,7 +20,10 @@
   --color-border: rgba(40, 40, 42, .13);      /* hairlines */
   --header-height: 76px;
   --site-text: .9rem;                         /* 14.4px, the site's text size */
-  --site-gutter: 2rem;
+  /* The page uses the width of the window, as the main site does, with that site's 3vw at each
+     side (style.css had capped it at 1400px, which left wide bands of white on large screens). */
+  --max-width: 2800px;
+  --site-gutter: clamp(2rem, 3vw, 4.5rem);
 }
 
 /* Header, as on the gallery site: the name, this page as "/ PUBLICATIONS", and one link.
@@ -57,7 +60,7 @@
 #hero-section { max-width: none; padding: 0; }
 
 .sp {
-  --sp-h: clamp(160px, 23.5vw, 330px);        /* height of a cover: about three across  */
+  --sp-h: clamp(160px, 23.5vw, 400px);        /* height of a cover: about three across  */
   --sp-w: calc(var(--sp-h) * 1.294);          /* every cover is 11 x 8.5                */
   --sp-gap: clamp(1rem, 1.9vw, 1.75rem);
   --sp-caption: 4.1rem;                       /* room under a cover for its name        */
@@ -212,7 +215,14 @@
   .list-tools .search-input, .list-tools .sort-select { font-size: 1rem; }
 }
 
-/* ── Narrower screens ───────────────────────────────────────────────────── */
+/* ── Wider and narrower screens ─────────────────────────────────────────── */
+/* More columns on wide screens, so the tiles keep their size instead of growing. */
+@media (min-width: 1600px) {
+  #catalog-grid.catalog-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+@media (min-width: 2100px) {
+  #catalog-grid.catalog-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
 @media (max-width: 1024px) {
   #catalog-grid.catalog-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
