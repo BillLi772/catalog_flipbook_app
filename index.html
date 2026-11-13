@@ -24,22 +24,24 @@
   <meta name="twitter:description" content="Browse and read the Bruno David Gallery exhibition catalogues.">
   <meta name="twitter:image" content="https://lh3.googleusercontent.com/d/1e7Y5sCgp3foWHfrd_VMhZGG_YMU6NA9T=w1200">
 
-  <!-- Google Fonts: Libre Franklin -->
+  <!-- Google Fonts, the same faces as brunodavidgallery.com: Urbanist (headings), Poppins (text), Roboto Condensed (gallery name) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Roboto+Condensed:wght@400;700&family=Urbanist:wght@400;500&display=swap" rel="stylesheet">
 
   <!-- PDF.js -->
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 
   <link rel="stylesheet" href="/css/style.css?v=12">
+  <!-- The gallery site's type and lines, the Selected publications row, and the look of the list -->
+  <link rel="stylesheet" href="/css/publications.css?v=1">
 </head>
 <body>
 
   <!-- Site Header -->
   <header id="site-header" role="banner">
     <div class="header-inner">
-      <a href="https://www.brunodavidgallery.com" class="site-title" id="site-title-link" aria-label="Bruno David Gallery" target="_blank" rel="noopener noreferrer">
+      <a href="https://www.brunodavidgallery.com" class="site-title" id="site-title-link" aria-label="Bruno David Gallery" target="_top">
         Bruno David Gallery
       </a>
       <nav class="site-nav" aria-label="Main navigation">
@@ -232,7 +234,8 @@
     };
   </script>
   <script src="/js/pdf-renderer.js?v=4"></script>
-  <script src="/js/library.js?v=19"></script>
+  <script src="/js/selected.js?v=1"></script>
+  <script src="/js/library.js?v=20"></script>
   <script src="/js/reader.js?v=8"></script>
   <script src="/js/app.js?v=6"></script>
 </body>
