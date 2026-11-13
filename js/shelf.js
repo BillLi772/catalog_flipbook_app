@@ -1,22 +1,24 @@
 /**
- * shelf.js — "On the shelf", the top section of the Publications page.
+ * shelf.js — the bookshelf at the top of the Publications page.
  *
- * Catalogues stand spine-out on a shelf (the idea comes from Time & Space's
- * Book Corner). Click a spine, or focus it and press Enter, and the book slides
- * out to show its cover, details and a Read button. The spine, the × or Esc
- * puts it back. ← / → / Home / End move along the shelf.
+ * Each catalogue stands on the shelf as a narrow strip cropped from its own
+ * cover. Click a strip (or focus it and press Enter) and it widens into the
+ * whole cover, with the artist, the title and a Read button beside it. The open
+ * cover is itself a link to the reader. The ×, Esc, or opening another book puts
+ * it back. ← / → / Home / End move along the shelf, and the name of the strip
+ * under the pointer shows just below it.
  *
- * Spines are drawn in CSS, so up front the shelf only fetches tiny 64px cover
- * thumbnails to colour them (cached in the browser afterwards; set "color" in
- * catalogs.json to choose a colour yourself). A full cover is fetched only when
- * someone hovers, focuses or opens that book.
+ * Which part of a cover a strip shows is worked out from a 64px thumbnail: the
+ * most colourful, most detailed band, so a spine shows the artwork rather than
+ * a blank gallery wall. The result is remembered in the browser. A cover that
+ * will not load leaves a plain spine with the artist and title on it.
  *
  * Which books: the catalogue marked "featured": true goes first (the weekly sync,
  * scripts/build-catalog.js, sets that on the first file Google Drive lists), then
  * one catalogue per artist. catalogs.json has no dates, so that selection moves
  * along by a few books each day and the whole archive takes turns; if dates are
- * ever added it becomes newest first. The first book starts pulled out, so the
- * page opens on a cover.
+ * ever added it becomes newest first. The first book starts open, so the page
+ * opens on a cover.
  *
  * library.js builds it once (see _renderHero there) and hides its container
  * while a search or an artist filter is active:
@@ -29,37 +31,37 @@ const Shelf = (() => {
 
   const DEFAULTS = {
     size: 24,              // books on the shelf
-    openFirst: true,       // start with the first book pulled out
+    openFirst: true,       // start with the first book open
     onePerArtist: true,    // a sampler of the roster, not five books by one artist
     rotateDaily: true,     // used only while no catalogue has a date
     title: 'Publications',
-    intro: 'Exhibition catalogues from Bruno David Gallery, St. Louis. Take one off the shelf to read it online, free.',
-    imprint: 'BDG',        // small mark at the foot of every spine
-    buyUrl: undefined,     // undefined = reuse the header's "Purchase Catalogs" link; null = no button
+    intro: '',             // optional sentence under the title
     coverUrl: (c, w) => `https://lh3.googleusercontent.com/d/${encodeURIComponent(c.driveFileId)}=w${w}`,
     readPath: c => `/catalog/${encodeURIComponent(c.id)}`,
     navigate: null,        // App.navigate, so reading stays inside the app
     splitTitle: null,      // Library.splitTitle: raw title -> { artist, catalog }
     artistKey: c => c.title.split(' : ')[0].trim(), // value the #artist-filter options use
-    isGroup: () => false,  // true for group shows, so they aren't counted as artists
-    onArtist: null,        // (key) => void for "All n catalogues by …"; default drives #artist-filter
+    isGroup: () => false,  // true for group shows: their "artist" is not a link
+    onArtist: null,        // (key) => void when an artist's name is clicked; default drives #artist-filter
   };
 
-  const COLOR_KEY = 'bdg-shelf-colors-v1';
+  const CACHE_KEY = 'bdg-shelf-v2';   // { catalogue id: [colour, crop] }
   const SMALL_WORDS = new Set('a an and as at but by de des du en et for from in into la le of on or the to via with'.split(' '));
 
   let o = DEFAULTS;
-  let root, wrap, shelf, caption, prevBtn, nextBtn;
+  let root, wrap, shelf, foot, label, arrows, caption, prevBtn, nextBtn;
   let books = [], byId = new Map(), counts = new Map();
-  let current = null, raf = 0, colors = {}, buyUrl = null, statusIdle = '', sizeWatch = null;
+  let current = null, raf = 0, cache = {}, sizeWatch = null, idleTimer = 0;
 
   // ── Helpers ────────────────────────────────────
 
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-  const pad = n => String(n).padStart(2, '0');
   const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const cssEsc = s => (window.CSS && CSS.escape ? CSS.escape(s) : String(s).replace(/["\\]/g, '\\$&'));
+  const bookEl = id => root && root.querySelector(`.bk-book[data-id="${cssEsc(id)}"]`);
+  const spineOf = book => book.querySelector('.bk-spine');
+  const coverOf = book => book.querySelector('.bk-cover');
 
   function hash(str) {
     let h = 2166136261;
@@ -95,10 +97,10 @@ const Shelf = (() => {
 
   const year = c => (String(c.date || '').match(/\d{4}/) || [''])[0];
 
-  /** Spine thickness in px: from the page count when known, otherwise a stable 26–44. */
+  /** Strip width in px: from the page count when known, otherwise a stable 30–50. */
   function thickness(c) {
-    if (c.pageCount > 0) return Math.round(Math.min(60, Math.max(22, 14 + c.pageCount * 0.3)));
-    return 26 + (hash(c.id) % 19);
+    if (c.pageCount > 0) return Math.round(Math.min(64, Math.max(28, 18 + c.pageCount * 0.3)));
+    return 30 + (hash(c.id) % 21);
   }
 
   function pick(list, n) {
@@ -122,16 +124,16 @@ const Shelf = (() => {
     return featured.concat(rest).slice(0, n);
   }
 
-  // ── Spine colours ──────────────────────────────
+  // ── What each strip shows ──────────────────────
 
-  function readColors() {
-    try { return JSON.parse(localStorage.getItem(COLOR_KEY)) || {}; } catch (e) { return {}; }
+  function readCache() {
+    try { return JSON.parse(localStorage.getItem(CACHE_KEY)) || {}; } catch (e) { return {}; }
   }
-  function saveColors() {
-    try { localStorage.setItem(COLOR_KEY, JSON.stringify(colors)); } catch (e) { /* storage blocked: colours are just recomputed */ }
+  function saveCache() {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)); } catch (e) { /* storage blocked: worked out again next visit */ }
   }
 
-  /** Black or white type, whichever reads better on the spine. */
+  /** Black or white type, whichever reads better on a colour. */
   function inkFor(hex) {
     const n = parseInt(hex.slice(1), 16);
     const lin = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
@@ -140,123 +142,146 @@ const Shelf = (() => {
   }
 
   /**
-   * The cover's most telling colour: its strongest hue if that covers at least 6%
-   * of the cover, otherwise the average of its greys (most covers are installation
-   * shots on white walls), ignoring paper-white margins.
+   * Reads a small thumbnail of a cover and returns [colour, crop].
+   * colour: its strongest hue, or the average grey of an installation shot; it
+   *         fills the strip until the cover arrives.
+   * crop:   where along the cover (0 = left edge, 1 = right edge) the liveliest
+   *         vertical band sits, judged by colour and contrast.
    */
-  function coverColor(img) {
-    const w = 48;
+  function study(img, frac) {
+    const w = 64;
     const h = Math.max(1, Math.round(w * img.naturalHeight / img.naturalWidth));
     const cv = document.createElement('canvas');
     cv.width = w; cv.height = h;
     const cx = cv.getContext('2d', { willReadFrequently: true });
     cx.drawImage(img, 0, 0, w, h);
     const d = cx.getImageData(0, 0, w, h).data;
+
     const bins = Array.from({ length: 12 }, () => ({ n: 0, s: 0, r: 0, g: 0, b: 0 }));
     const grey = { n: 0, r: 0, g: 0, b: 0 };
-    let total = 0;
-    for (let i = 0; i < d.length; i += 4) {
-      const r = d[i], g = d[i + 1], b = d[i + 2];
-      const max = Math.max(r, g, b), min = Math.min(r, g, b);
-      const l = (max + min) / 510;
-      const s = max === min ? 0 : (max - min) / (255 - Math.abs(max + min - 255));
-      total++;
-      if (s > 0.28 && l > 0.12 && l < 0.88) {
-        const c = max - min;
-        const hue = max === r ? ((g - b) / c + 6) % 6 : max === g ? (b - r) / c + 2 : (r - g) / c + 4;
-        const bin = bins[Math.floor(hue * 2) % 12];
-        bin.n++; bin.s += s; bin.r += r; bin.g += g; bin.b += b;
-      } else if (l > 0.05 && l < 0.95) {
-        grey.n++; grey.r += r; grey.g += g; grey.b += b;
+    const interest = new Float32Array(w);
+    for (let x = 0; x < w; x++) {
+      let chroma = 0, sum = 0, sum2 = 0;
+      for (let y = 0; y < h; y++) {
+        const i = (y * w + x) * 4;
+        const r = d[i], g = d[i + 1], b = d[i + 2];
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        const l = (max + min) / 510;
+        const s = max === min ? 0 : (max - min) / (255 - Math.abs(max + min - 255));
+        chroma += (max - min) / 255;
+        sum += l; sum2 += l * l;
+        if (s > 0.28 && l > 0.12 && l < 0.88) {
+          const c = max - min;
+          const hue = max === r ? ((g - b) / c + 6) % 6 : max === g ? (b - r) / c + 2 : (r - g) / c + 4;
+          const bin = bins[Math.floor(hue * 2) % 12];
+          bin.n++; bin.s += s; bin.r += r; bin.g += g; bin.b += b;
+        } else if (l > 0.05 && l < 0.95) {
+          grey.n++; grey.r += r; grey.g += g; grey.b += b;
+        }
       }
+      const mean = sum / h;
+      interest[x] = chroma / h + 0.5 * Math.sqrt(Math.max(0, sum2 / h - mean * mean));
     }
+
+    const total = w * h;
     const best = bins.reduce((a, b) => (b.s > a.s ? b : a));
     const src = best.n / total >= 0.06 ? best : grey.n / total >= 0.04 ? grey : null;
-    if (!src) return '#ecebe7';
     const hx = v => Math.round(v / src.n).toString(16).padStart(2, '0');
-    return '#' + hx(src.r) + hx(src.g) + hx(src.b);
+    const hex = src ? '#' + hx(src.r) + hx(src.g) + hx(src.b) : '#ecebe7';
+
+    const win = Math.max(3, Math.round(w * frac));   // the strip's width, in thumbnail pixels
+    let top = -Infinity, at = (w - win) / 2;
+    for (let x = 1; x + win <= w - 1; x++) {
+      let s = 0;
+      for (let k = 0; k < win; k++) s += interest[x + k];
+      s = s / win - 0.05 * Math.abs((x + win / 2) / w - 0.5);   // on an even cover, stay near the middle
+      if (s > top) { top = s; at = x; }
+    }
+    return [hex, +(at / (w - win)).toFixed(3)];
   }
 
-  function paint(id, hex) {
-    const el = root && root.querySelector(`.bk-book[data-id="${cssEsc(id)}"]`);
-    if (!el || !/^#[0-9a-f]{6}$/i.test(hex)) return;
-    el.style.setProperty('--spine', hex);
-    el.style.setProperty('--ink', inkFor(hex));
+  function apply(id) {
+    const el = bookEl(id);
+    const saved = cache[id];
+    if (!el || !saved) return;
+    const c = byId.get(id);
+    const hex = (c && c.color) || saved[0];
+    if (/^#[0-9a-f]{6}$/i.test(hex)) {
+      el.style.setProperty('--spine', hex);
+      el.style.setProperty('--ink', inkFor(hex));
+    }
+    el.style.setProperty('--f', saved[1]);
   }
 
-  function paintAll(list) {
-    const todo = [];
-    list.forEach(c => {
-      const hex = c.color || colors[c.id];
-      if (hex) paint(c.id, hex);
-      else if (c.driveFileId) todo.push(c);
-    });
+  const ready = id => { const el = bookEl(id); if (el) el.setAttribute('data-ready', ''); };
+
+  /** Work out colour and crop for the books not seen before, four at a time. */
+  function studyAll(list) {
+    const todo = list.filter(c => !cache[c.id] && c.driveFileId);
+    list.forEach(c => { if (!cache[c.id] && !c.driveFileId) ready(c.id); });
     let i = 0;
     let running = 0;
     const next = () => {
       const c = todo[i++];
-      if (!c) { if (--running === 0) saveColors(); return; }
+      if (!c) { if (--running === 0) saveCache(); return; }
       const img = new Image();
-      img.crossOrigin = 'anonymous'; // Google's image server allows it, so the canvas stays readable
+      img.crossOrigin = 'anonymous';   // Google's image server allows it, so the canvas stays readable
       img.onload = () => {
-        try { colors[c.id] = coverColor(img); paint(c.id, colors[c.id]); } catch (e) { /* keep the neutral spine */ }
+        try { cache[c.id] = study(img, thickness(c) / 440); apply(c.id); } catch (e) { /* keep the centre crop */ }
+        ready(c.id);
         next();
       };
-      img.onerror = next;
+      img.onerror = () => { ready(c.id); next(); };
       img.src = o.coverUrl(c, 64);
     };
     for (; running < Math.min(4, todo.length); ) { running++; next(); }
+    // never hold a cover back for long waiting on its thumbnail
+    setTimeout(() => todo.forEach(c => ready(c.id)), 1800);
   }
 
   // ── Markup ─────────────────────────────────────
 
-  function infoHTML(c, p, i, n) {
+  function infoHTML(c, p) {
     const key = o.artistKey(c);
     const more = counts.get(key) || 0;
-    // Year and page count when catalogs.json has them; until then, one plain line
-    const rows = [
-      year(c) && ['Year', year(c)],
-      c.pageCount > 0 && ['Pages', c.pageCount],
-    ].filter(Boolean);
-    if (!rows.length) rows.push(['Read online', 'Free']);
+    const meta = [year(c), c.pageCount > 0 ? `${c.pageCount} pages` : ''].filter(Boolean).join(' \u00b7 ');
+    const artist = !p.artist ? ''
+      : more > 1 && !o.isGroup(key)
+        ? `<button type="button" class="bk-kicker bk-more" data-key="${esc(key)}" title="All ${more} catalogues by ${esc(p.artist)}"
+                   aria-label="${esc(p.artist)}: show all ${more} catalogues">${esc(p.artist)}</button>`
+        : `<p class="bk-kicker">${esc(p.artist)}</p>`;
     return `
-      <p class="bk-pos">${pad(i + 1)} / ${pad(n)}</p>
-      ${p.artist ? `<p class="bk-kicker">${esc(p.artist)}</p>` : ''}
+      ${artist}
       <h3 class="bk-name">${esc(p.title)}</h3>
-      <dl class="bk-meta">${rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
       <div class="bk-actions">
+        ${meta ? `<p class="bk-meta">${esc(meta)}</p>` : ''}
         <a class="bk-read" href="${esc(o.readPath(c))}" data-read>Read catalogue <span aria-hidden="true">&rarr;</span></a>
-      </div>
-      <div class="bk-links">
-        ${buyUrl ? `<a class="bk-buy" href="${esc(buyUrl)}" target="_blank" rel="noopener">Print editions <span aria-hidden="true">&nearr;</span></a>` : ''}
-        ${more > 1 && !o.isGroup(key) ? `<button type="button" class="bk-more" data-key="${esc(key)}">All ${more} catalogues by ${esc(p.artist)}</button>` : ''}
       </div>
       <button type="button" class="bk-close" aria-label="Put ${esc(p.title)} back on the shelf"><span aria-hidden="true">&times;</span></button>`;
   }
 
-  function bookHTML(c, i, n) {
+  function bookHTML(c, i) {
     const p = parts(c);
-    const label = [p.artist, p.title].filter(Boolean).join(', ');
-    const hex = c.color || colors[c.id];
-    const style = `--w:${thickness(c)}px` + (hex ? `;--spine:${hex};--ink:${inkFor(hex)}` : '');
+    const name = [p.artist, p.title].filter(Boolean).join(', ');
+    const saved = cache[c.id];
+    const hex = c.color || (saved && saved[0]);
+    const style = `--w:${thickness(c)}px`
+      + (hex && /^#[0-9a-f]{6}$/i.test(hex) ? `;--spine:${hex};--ink:${inkFor(hex)}` : '')
+      + (saved ? `;--f:${Number(saved[1]) || 0}` : '');
     return `
-      <li class="bk-book" data-id="${esc(c.id)}" style="${esc(style)}">
-        <button type="button" class="bk-spine" tabindex="${i === 0 ? 0 : -1}" aria-expanded="false"
-                aria-controls="bk-open-${i}" aria-label="${esc(label)}">
-          <span class="bk-spine-label" aria-hidden="true">
-            ${p.artist ? `<span class="bk-spine-artist">${esc(p.artist)}</span>` : ''}
-            <span class="bk-spine-title">${esc(p.title)}</span>
+      <li class="bk-book" data-id="${esc(c.id)}" style="${esc(style)}"${saved ? ' data-ready' : ''}>
+        <div class="bk-face">
+          <span class="bk-ph" aria-hidden="true">
+            <span class="bk-ph-spine"><b>${esc(p.artist)}</b><span>${esc(p.title)}</span></span>
+            <span class="bk-ph-cover"><span>${esc(p.artist)}</span><b>${esc(p.title)}</b></span>
           </span>
-          <span class="bk-spine-mark" aria-hidden="true">${esc(o.imprint)}</span>
-        </button>
-        <div class="bk-open" id="bk-open-${i}" role="group" aria-label="${esc(label)}" inert>
-          <div class="bk-open-inner">
-            <a class="bk-cover" href="${esc(o.readPath(c))}" data-read tabindex="-1" aria-hidden="true">
-              <span class="bk-cover-ph"><span>${esc(p.artist)}</span><b>${esc(p.title)}</b></span>
-              <img alt="" decoding="async">
-            </a>
-            <div class="bk-info">${infoHTML(c, p, i, n)}</div>
-          </div>
+          <img class="bk-img" alt="" decoding="async">
+          <button type="button" class="bk-spine" tabindex="${i === 0 ? 0 : -1}" aria-expanded="false"
+                  aria-controls="bk-open-${i}" aria-label="${esc(name)}"></button>
+          <a class="bk-cover" href="${esc(o.readPath(c))}" data-read tabindex="-1" aria-label="Read ${esc(name)}" hidden></a>
+        </div>
+        <div class="bk-open" id="bk-open-${i}" role="group" aria-label="${esc(name)}" inert>
+          <div class="bk-info">${infoHTML(c, p)}</div>
         </div>
       </li>`;
   }
@@ -266,32 +291,27 @@ const Shelf = (() => {
   function render(container, catalogs, options) {
     teardown();
     o = Object.assign({}, DEFAULTS, options || {});
-    const headerBuy = document.querySelector('.nav-link--purchase');
-    buyUrl = o.buyUrl !== undefined ? o.buyUrl : (headerBuy ? headerBuy.href : null);
-    colors = readColors();
+    cache = readCache();
 
     const all = (catalogs || []).filter(c => c && c.id && c.title);
     byId = new Map(all.map(c => [c.id, c]));
     counts = new Map();
     all.forEach(c => { const k = o.artistKey(c); counts.set(k, (counts.get(k) || 0) + 1); });
-    const artists = [...counts.keys()].filter(k => !o.isGroup(k)).length;
     const picked = pick(all, o.size);
-    statusIdle = `On the shelf <span class="bk-num">(${picked.length})</span>`;
 
     container.innerHTML = `
       <section class="bk" aria-labelledby="bk-title">
         <header class="bk-head">
           <h1 class="bk-title" id="bk-title">${esc(o.title)}</h1>
-          <p class="bk-count">${all.length} catalogues <span aria-hidden="true">&middot;</span> ${artists} artists</p>
+          ${o.intro ? `<p class="bk-intro">${esc(o.intro)}</p>` : ''}
         </header>
-        <p class="bk-intro">${esc(o.intro)}</p>
         <div class="bk-shelf-wrap">
-          <ol class="bk-shelf" aria-label="On the shelf: ${picked.length} catalogues">
-            ${picked.map((c, i) => bookHTML(c, i, picked.length)).join('')}
+          <ol class="bk-shelf" aria-label="Catalogues on the shelf">
+            ${picked.map(bookHTML).join('')}
           </ol>
         </div>
         <div class="bk-foot">
-          <p class="bk-status">${statusIdle}</p>
+          <p class="bk-label" aria-hidden="true"></p>
           <div class="bk-arrows">
             <button type="button" class="bk-prev" aria-label="Scroll the shelf left">&larr;</button>
             <button type="button" class="bk-next" aria-label="Scroll the shelf right">&rarr;</button>
@@ -307,6 +327,9 @@ const Shelf = (() => {
     root = container.querySelector('.bk');
     wrap = root.querySelector('.bk-shelf-wrap');
     shelf = root.querySelector('.bk-shelf');
+    foot = root.querySelector('.bk-foot');
+    label = root.querySelector('.bk-label');
+    arrows = root.querySelector('.bk-arrows');
     caption = root.querySelector('.bk-caption');
     prevBtn = root.querySelector('.bk-prev');
     nextBtn = root.querySelector('.bk-next');
@@ -315,17 +338,29 @@ const Shelf = (() => {
     root.addEventListener('click', onClick);
     shelf.addEventListener('keydown', onKey);
     shelf.addEventListener('scroll', onScroll, { passive: true });
-    shelf.addEventListener('pointerover', onPrefetch);
-    shelf.addEventListener('focusin', onPrefetch);
+    shelf.addEventListener('pointerover', onPoint);
+    shelf.addEventListener('pointerleave', hideLabel);
+    shelf.addEventListener('focusin', onPoint);
+    shelf.addEventListener('focusout', hideLabel);
     shelf.addEventListener('transitionend', onTransitionEnd);
     document.addEventListener('keydown', onEsc);
-    // library.js renders while the page is still hidden, so re-measure whenever the shelf gets a size
+    // library.js renders while the page is still hidden, so measure again whenever the shelf gets a size
     if (window.ResizeObserver) { sizeWatch = new ResizeObserver(onScroll); sizeWatch.observe(shelf); }
     else window.addEventListener('resize', onScroll);
 
-    paintAll(picked);
+    studyAll(picked);
     if (o.openFirst && books.length) open(books[0], { scroll: false, eager: true });
-    updateArrows();
+    refresh();
+
+    // once the page has settled, fetch the strips further along the shelf too (not on phones or data-saver)
+    const later = () => {
+      idleTimer = setTimeout(() => {
+        const saver = navigator.connection && navigator.connection.saveData;
+        if (!saver && window.matchMedia('(min-width: 801px)').matches) loadStrips(true);
+      }, 2500);
+    };
+    if (document.readyState === 'complete') later();
+    else window.addEventListener('load', later, { once: true });
     return api;
   }
 
@@ -333,26 +368,73 @@ const Shelf = (() => {
     document.removeEventListener('keydown', onEsc);
     window.removeEventListener('resize', onScroll);
     if (sizeWatch) { sizeWatch.disconnect(); sizeWatch = null; }
+    clearTimeout(idleTimer);
     current = null;
+  }
+
+  // ── Covers ─────────────────────────────────────
+
+  /** Width of an open cover: measured, or (while the page is still hidden) the same sum the CSS does. */
+  function coverWidth(book) {
+    return (book && book.querySelector('.bk-ph').offsetWidth)
+      || Math.round(Math.min(380, Math.max(window.innerWidth < 640 ? 230 : 300, window.innerWidth * 0.29)) * 1.294);
+  }
+
+  function widthFor(book) {
+    const need = coverWidth(book) * Math.min(2, window.devicePixelRatio || 1);
+    return [600, 800, 1200, 1600].find(x => x >= need) || 1600;
+  }
+
+  function fail(book) {
+    book.dataset.img = 'none';
+    book.classList.add('no-img');   // the plain spine with artist and title shows instead
+    const img = book.querySelector('.bk-img');
+    if (img) img.remove();
+  }
+
+  /** Strips use the same 600px file as the list below, so each cover is downloaded once. */
+  function loadImg(book, eager) {
+    const img = book.querySelector('.bk-img');
+    if (!img || book.dataset.img) return;
+    const c = byId.get(book.dataset.id);
+    if (!c || !c.driveFileId) { fail(book); return; }
+    const w = book === current ? widthFor(book) : 600;
+    book.dataset.img = 'loading';
+    book.dataset.w = String(w);
+    if (eager) img.setAttribute('fetchpriority', 'high');
+    img.onload = () => { book.dataset.img = 'loaded'; img.classList.add('is-loaded'); };
+    img.onerror = () => fail(book);
+    img.src = o.coverUrl(c, w);
+  }
+
+  /** An open cover is much larger than a strip: swap in a sharper file once it has arrived. */
+  function sharpen(book) {
+    const img = book.querySelector('.bk-img');
+    const c = byId.get(book.dataset.id);
+    const w = widthFor(book);
+    if (!img || !c || !c.driveFileId || w <= (Number(book.dataset.w) || 0)) return;
+    book.dataset.w = String(w);
+    const hi = new Image();
+    hi.onload = () => { if (img.isConnected) img.src = hi.src; };
+    hi.src = o.coverUrl(c, w);
+  }
+
+  /** Load the strips in or near view; all of them when asked. */
+  function loadStrips(all) {
+    if (!shelf || !shelf.clientWidth) return;   // not laid out yet
+    const from = shelf.scrollLeft - 200;
+    const to = shelf.scrollLeft + shelf.clientWidth + 400;
+    books.forEach(b => {
+      if (b.dataset.img) return;
+      if (all || (b.offsetLeft + b.offsetWidth >= from && b.offsetLeft <= to)) loadImg(b, false);
+    });
   }
 
   // ── Opening and closing ────────────────────────
 
-  function loadCover(book, eager) {
-    const img = book.querySelector('.bk-cover img');
-    if (!img || img.dataset.state) return;
-    const c = byId.get(book.dataset.id);
-    if (!c || !c.driveFileId) { img.dataset.state = 'none'; return; }
-    img.dataset.state = 'loading';
-    // Measured cover width, or (while the page is still hidden) the same sum the CSS does
-    const box = book.querySelector('.bk-cover').offsetWidth
-      || Math.round(Math.min(380, Math.max(window.innerWidth < 640 ? 230 : 300, window.innerWidth * 0.29)) * 1.294);
-    const need = box * Math.min(2, window.devicePixelRatio || 1);
-    const w = [480, 800, 1200, 1600].find(x => x >= need) || 1600;
-    if (eager) img.setAttribute('fetchpriority', 'high');
-    img.onload = () => { img.dataset.state = 'loaded'; img.classList.add('is-loaded'); };
-    img.onerror = () => { img.dataset.state = 'error'; img.remove(); }; // the typographic cover underneath stays
-    img.src = o.coverUrl(c, w);
+  function roving(el) {
+    books.forEach(b => { spineOf(b).tabIndex = -1; coverOf(b).tabIndex = -1; });
+    el.tabIndex = 0;
   }
 
   function open(book, opts) {
@@ -360,15 +442,22 @@ const Shelf = (() => {
     if (!book || current === book) return;
     if (current) close(false);
     current = book;
-    loadCover(book, eager);
+    const spine = spineOf(book);
+    const cover = coverOf(book);
+    const hadFocus = document.activeElement === spine;
+    loadImg(book, eager);
+    sharpen(book);
     book.classList.add('is-open');
-    const spine = book.querySelector('.bk-spine');
     spine.setAttribute('aria-expanded', 'true');
+    cover.hidden = false;
+    spine.hidden = true;            // the strip has become the cover; the cover link takes over
     const panel = book.querySelector('.bk-open');
     panel.inert = false;
     panel.removeAttribute('inert');
-    roving(spine);
-    caption.innerHTML = book.querySelector('.bk-info').innerHTML; // phones show the details under the shelf
+    roving(cover);
+    if (hadFocus) cover.focus({ preventScroll: true });
+    hideLabel();
+    caption.innerHTML = book.querySelector('.bk-info').innerHTML;   // narrow screens show the details under the shelf
     caption.hidden = false;
     book.dataset.reveal = scroll ? '1' : '';
     if (scroll) reveal(book, false);
@@ -378,20 +467,24 @@ const Shelf = (() => {
     const book = current;
     if (!book) return;
     current = null;
+    const spine = spineOf(book);
     book.classList.remove('is-open');
-    const spine = book.querySelector('.bk-spine');
+    spine.hidden = false;
     spine.setAttribute('aria-expanded', 'false');
+    coverOf(book).hidden = true;
     const panel = book.querySelector('.bk-open');
     panel.inert = true;
     panel.setAttribute('inert', '');
+    roving(spine);
     caption.hidden = true;
     caption.innerHTML = '';
     if (focus) spine.focus({ preventScroll: true });
   }
 
-  /** Scroll the shelf so the pulled-out book is in view. Runs as it opens and again when it settles. */
+  /** Scroll the shelf so the open book is in view. Runs as it opens and again when it settles. */
   function reveal(book, settled) {
-    const full = book.querySelector('.bk-spine').offsetWidth + book.querySelector('.bk-open-inner').offsetWidth;
+    const info = book.querySelector('.bk-info');
+    const full = coverWidth(book) + (info ? info.offsetWidth : 0);
     const left = book.offsetLeft;
     const view = shelf.clientWidth;
     const x = shelf.scrollLeft;
@@ -408,16 +501,29 @@ const Shelf = (() => {
 
   function onTransitionEnd(e) {
     if (e.propertyName !== 'width' || !e.target.classList.contains('bk-book')) return;
-    updateArrows();
+    refresh();
     if (e.target === current && current.dataset.reveal) {
       current.dataset.reveal = '';
       reveal(current, true);
     }
   }
 
-  function roving(spine) {
-    books.forEach(b => { b.firstElementChild.tabIndex = -1; });
-    spine.tabIndex = 0;
+  // ── The name under the pointer ─────────────────
+
+  function onPoint(e) {
+    const book = e.target.closest && e.target.closest('.bk-book');
+    if (!book || book === current) { hideLabel(); return; }   // the open book already shows its name
+    const p = parts(byId.get(book.dataset.id));
+    label.innerHTML = `${p.artist ? `<b>${esc(p.artist)}</b>` : ''}<span>${esc(p.title)}</span>`;
+    // sits under its strip, kept inside the row and clear of the arrows
+    const room = foot.clientWidth - label.offsetWidth - (root.classList.contains('bk--overflow') ? arrows.offsetWidth + 12 : 0);
+    const x = Math.max(0, Math.min(book.offsetLeft - shelf.scrollLeft, room));
+    label.style.transform = `translateX(${Math.round(x)}px)`;
+    label.classList.add('is-on');
+  }
+
+  function hideLabel() {
+    if (label) label.classList.remove('is-on');
   }
 
   // ── Events ─────────────────────────────────────
@@ -425,7 +531,7 @@ const Shelf = (() => {
   function onClick(e) {
     const t = e.target;
     if (!t || !t.closest) return;
-    const read = t.closest('a[data-read]');
+    const read = t.closest('a[data-read]');   // the open cover, or the Read button
     if (read) {
       // app.js also listens on document and turns every internal link click into a
       // navigation. Stop the click here so the catalogue opens once, not twice, and
@@ -442,46 +548,39 @@ const Shelf = (() => {
     const more = t.closest('.bk-more');
     if (more) { showArtist(more.dataset.key); return; }
     const spine = t.closest('.bk-spine');
-    if (spine) {
-      const book = spine.closest('.bk-book');
-      if (book === current) close(true); else open(book);
-      return;
-    }
+    if (spine) { open(spine.closest('.bk-book')); return; }
     if (t.closest('.bk-prev')) slide(-1);
     else if (t.closest('.bk-next')) slide(1);
   }
 
   function onKey(e) {
-    const spine = e.target.closest && e.target.closest('.bk-spine');
-    if (!spine) return;
-    const spines = books.map(b => b.firstElementChild);
-    const i = spines.indexOf(spine);
-    let j = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: spines.length - 1 }[e.key];
+    const el = e.target.closest && e.target.closest('.bk-spine, .bk-cover');
+    if (!el) return;
+    const i = books.indexOf(el.closest('.bk-book'));
+    let j = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: books.length - 1 }[e.key];
     if (j === undefined) return;
     e.preventDefault();
-    j = Math.max(0, Math.min(spines.length - 1, j));
-    roving(spines[j]);
-    spines[j].focus();
+    j = Math.max(0, Math.min(books.length - 1, j));
+    const target = books[j] === current ? coverOf(books[j]) : spineOf(books[j]);
+    roving(target);
+    target.focus();
   }
 
   function onEsc(e) {
     if (e.key !== 'Escape' || !current || !root || root.offsetParent === null) return;
     const inside = root.contains(document.activeElement);
-    if (!inside && document.activeElement !== document.body) return; // e.g. typing in search
+    if (!inside && document.activeElement !== document.body) return;   // e.g. typing in search
     close(true);
   }
 
-  function onPrefetch(e) {
-    const book = e.target.closest && e.target.closest('.bk-book');
-    if (book) loadCover(book, false);
-  }
-
   function onScroll() {
+    hideLabel();
     if (raf) return;
-    raf = requestAnimationFrame(() => { raf = 0; updateArrows(); });
+    raf = requestAnimationFrame(() => { raf = 0; refresh(); });
   }
 
-  function updateArrows() {
+  /** Arrow states, edge fades, and any strips that have come into view. */
+  function refresh() {
     if (!shelf) return;
     const max = shelf.scrollWidth - shelf.clientWidth;
     const x = shelf.scrollLeft;
@@ -490,6 +589,7 @@ const Shelf = (() => {
     nextBtn.disabled = x >= max - 2;
     wrap.classList.toggle('is-left', x > 2);
     wrap.classList.toggle('is-right', x < max - 2);
+    loadStrips(false);
   }
 
   function slide(dir) {
@@ -502,7 +602,7 @@ const Shelf = (() => {
     const sel = document.getElementById('artist-filter');
     if (!sel) return;
     sel.value = key;
-    if (sel.value !== key) return; // no such option
+    if (sel.value !== key) return;   // no such option
     sel.dispatchEvent(new Event('change', { bubbles: true }));
     window.scrollTo({ top: 0, behavior: reduced() ? 'auto' : 'smooth' });
   }
