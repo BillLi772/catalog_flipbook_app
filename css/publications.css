@@ -1,0 +1,205 @@
+/* ==========================================================================
+   publications.css — loaded after style.css.
+
+   1. Brings the page in line with the rest of brunodavidgallery.com: the same
+      typefaces (Urbanist for headings, Poppins for text, Roboto Condensed for
+      the gallery name), the same sizes, light weights and hairline rules.
+   2. The top of the library: the title and the "Selected publications" row.
+   3. The list of all publications, as uniform tiles with captions underneath.
+   ========================================================================== */
+
+/* ── 1. The gallery site's type, colour and lines ───────────────────────── */
+:root {
+  --font-primary: 'Poppins', 'Helvetica Neue', Arial, sans-serif;
+  --font-heading: 'Urbanist', 'Poppins', 'Helvetica Neue', Arial, sans-serif;
+  --font-brand: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif;
+  --color-bg: #fafafa;
+  --color-text: #28282a;
+  --color-text-muted: #6f6f72;
+  --color-border: rgba(40, 40, 42, .13);     /* hairlines */
+  --header-height: 76px;
+  --site-text: .9rem;                         /* 14.4px, the site's text size */
+  --site-gutter: 2rem;
+}
+
+/* Header: the gallery name as on the main site, with this page as "/ PUBLICATIONS". */
+.header-inner { gap: 0; padding: 0 var(--site-gutter); }
+.site-title {
+  font-family: var(--font-brand); font-weight: 700; font-size: clamp(1.3rem, 2.87vw, 1.875rem);
+  letter-spacing: 1px; text-transform: uppercase; line-height: 1;
+}
+.site-nav { flex: 1 1 auto; gap: 0; overflow: visible; }
+.nav-link {
+  font-size: var(--site-text); font-weight: 400; letter-spacing: 0; text-transform: none;
+  color: var(--color-text); padding: .5rem 0;
+}
+.nav-link::after { display: none; }
+.nav-link--home {
+  font-family: var(--font-brand); font-size: clamp(1.3rem, 2.87vw, 1.875rem); font-weight: 400;
+  letter-spacing: 1px; text-transform: uppercase; line-height: 1; padding: 0 0 0 9px;
+}
+.nav-link--home::before { content: '/'; opacity: .45; margin-right: 9px; }
+.nav-link--purchase { margin-left: auto; margin-right: 1.75rem; color: var(--color-text); }
+.nav-link--purchase:hover, .nav-link--home:hover { color: var(--color-text); opacity: .6; }
+.header-actions { gap: 1.25rem; }
+.search-input, .sort-select { font-size: var(--site-text); color: var(--color-text); border-bottom-color: var(--color-border); }
+.search-input::placeholder { color: var(--color-text-muted); }
+.sort-select { color: var(--color-text); }
+
+/* Lighter weights elsewhere in the app (reader, messages). */
+.reader-back { font-weight: 400; letter-spacing: .04em; }
+.reader-title { font-family: var(--font-heading); font-weight: 500; font-size: 1rem; letter-spacing: 0; }
+.related-title, .shortcuts-heading { font-family: var(--font-heading); font-weight: 500; letter-spacing: -.01em; }
+.related-card-title { font-weight: 500; }
+.loading-state, .no-results { font-size: var(--site-text); }
+
+/* ── 2. The top of the library ──────────────────────────────────────────── */
+/* The old hero wrapper steps aside: the section brings its own spacing. */
+#hero-section { max-width: none; padding: 0; }
+
+.sp {
+  --sp-h: clamp(132px, 17.5vw, 236px);        /* height of a cover in the row     */
+  --sp-w: calc(var(--sp-h) * 1.294);          /* every cover is 11 x 8.5          */
+  --sp-gap: clamp(1.25rem, 2.6vw, 2.5rem);
+  color: var(--color-text);
+}
+.sp[hidden] { display: none; }
+.sp-inner { max-width: var(--max-width, 1400px); margin: 0 auto; padding: 0 var(--site-gutter); }
+
+/* Same type and spacing as the "Exhibitions" title on the gallery site. */
+.sp-title {
+  margin: 0; padding-top: 60px;
+  font-family: var(--font-heading); font-weight: 400; font-size: min(4rem, calc(3.6vw + 1rem));
+  letter-spacing: -.02em; line-height: 1.056;
+}
+.sp-row { display: flex; align-items: baseline; justify-content: space-between; gap: 1.5rem; margin-top: 56px; }
+/* Section labels, as "CURRENT EXHIBITIONS" on the gallery site. */
+.sp-label {
+  margin: 0; font-family: var(--font-primary); font-size: 1.125rem; font-weight: 400;
+  letter-spacing: 3px; line-height: 1.5; text-transform: uppercase;
+}
+.sp-toggle {
+  -webkit-appearance: none; appearance: none; border: 0; background: none; padding: 0; cursor: pointer;
+  font: 400 var(--site-text)/1.5 var(--font-primary); color: var(--color-text);
+  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px;
+}
+.sp-toggle:hover { opacity: .6; }
+.sp-toggle[hidden] { display: none; }
+
+/* The row itself: it runs edge to edge and is moved by selected.js with a transform. */
+.sp-viewport {
+  margin-top: calc(1.9rem - 12px); touch-action: pan-y;
+  overflow: hidden; overflow: clip;           /* clip where supported: nothing here should ever scroll */
+  -webkit-user-select: none; user-select: none; cursor: grab;
+  min-height: calc(var(--sp-h) + 4.6rem + 12px);   /* holds its place while covers load */
+}
+.sp-viewport[hidden] { display: none; }
+.sp--dragging .sp-viewport { cursor: grabbing; }
+.sp--dragging .sp-card { pointer-events: none; }
+.sp-track {
+  position: relative; display: flex; gap: var(--sp-gap); width: max-content;
+  list-style: none; margin: 0; padding: 12px 0 0; will-change: transform;   /* room for the lift and the focus ring */
+  opacity: 0; transition: opacity .7s ease;   /* fades in once selected.js has laid it out */
+}
+.sp--ready .sp-track { opacity: 1; }
+.sp-item { flex: 0 0 var(--sp-w); width: var(--sp-w); }
+.sp-card { display: block; color: inherit; text-decoration: none; -webkit-user-drag: none; }
+.sp-cover {
+  position: relative; display: block; width: var(--sp-w); height: var(--sp-h); overflow: hidden;
+  background: #efeeeb; transition: transform .6s cubic-bezier(.22, 1, .36, 1), box-shadow .6s ease;
+}
+.sp-cover img { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; }
+.sp-card:hover .sp-cover, .sp-card:focus-visible .sp-cover {
+  transform: translateY(-6px); box-shadow: 0 22px 30px -22px rgba(0, 0, 0, .45);
+}
+.sp-card:focus-visible { outline: none; }
+.sp-card:focus-visible .sp-cover { outline: 1px solid var(--color-text); outline-offset: 3px; }
+/* seen only if a cover will not load */
+.sp-ph { position: absolute; inset: 0; display: none; flex-direction: column; justify-content: flex-end; gap: .3rem; padding: 1rem; }
+.sp-cover.no-img .sp-ph { display: flex; }
+.sp-ph span { font-size: .75rem; letter-spacing: .14em; text-transform: uppercase; }
+.sp-ph b { font-family: var(--font-heading); font-size: 1.25rem; font-weight: 400; letter-spacing: -.02em; line-height: 1.1; }
+
+.sp-name {
+  display: block; margin-top: 1.05rem; font-family: var(--font-heading); font-size: 1.2rem; font-weight: 400;
+  letter-spacing: -.02em; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sp-sub {
+  display: block; margin-top: .3rem; font-size: var(--site-text); line-height: 1.5; color: var(--color-text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sp-card:hover .sp-sub, .sp-card:focus-visible .sp-sub {
+  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px;
+}
+
+.sp-list-head { margin-top: 3.75rem; padding-top: 1.9rem; border-top: 1px solid var(--color-border); }
+
+/* ── 3. The list of all publications ────────────────────────────────────── */
+#catalog-grid.catalog-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3.25rem 1.75rem;
+  padding: 2.05rem var(--site-gutter) 4rem;
+}
+#catalog-grid .catalog-card { min-width: 0; }
+#catalog-grid .card-image-wrap {
+  aspect-ratio: 1 / 1; display: grid; place-items: center; padding: 12%; margin-bottom: 1rem; background: #f1f0ed;
+}
+#catalog-grid .card-image-wrap .cover-img {
+  width: 100%; height: auto;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, .05), 0 14px 24px -14px rgba(0, 0, 0, .45);
+  transition: opacity .4s ease, transform .5s cubic-bezier(.22, 1, .36, 1), box-shadow .5s ease;
+}
+#catalog-grid .catalog-card:hover .card-image-wrap .cover-img {
+  transform: translateY(-6px);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, .05), 0 24px 30px -18px rgba(0, 0, 0, .45);
+}
+#catalog-grid .card-cover-placeholder { background-color: #f1f0ed !important; }
+#catalog-grid .catalog-card:hover .card-cover-placeholder { transform: none; }
+#catalog-grid .placeholder-title { font-family: var(--font-heading); font-weight: 400; }
+#catalog-grid .catalog-card:focus-visible { outline: 1px solid var(--color-text); outline-offset: 6px; }
+#catalog-grid .card-artist {
+  margin: 0 0 .2rem; font-family: var(--font-heading); font-size: 1.125rem; font-weight: 400;
+  letter-spacing: -.02em; line-height: 1.25; text-transform: none; color: var(--color-text);
+}
+#catalog-grid .card-title {
+  margin: 0; font-size: var(--site-text); font-weight: 400; font-style: normal; letter-spacing: 0;
+  line-height: 1.5; color: var(--color-text-muted);
+}
+#catalog-grid .catalog-card:hover .card-title { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+/* a long unbroken title ("Strats/DADADADA/Complications") must wrap, not widen the page */
+#catalog-grid .card-artist, #catalog-grid .card-title { overflow-wrap: anywhere; }
+
+/* ── Narrower screens ───────────────────────────────────────────────────── */
+@media (max-width: 1240px) {
+  .nav-link--home { display: none; }          /* no room for "/ PUBLICATIONS" beside the controls */
+}
+@media (min-width: 769px) and (max-width: 1240px) {
+  /* the search box and artist menu share whatever width is left */
+  .site-nav { flex: 0 1 auto; margin-left: auto; }
+  .nav-link--purchase { margin-left: 1.5rem; margin-right: 1.25rem; }
+  .header-actions { flex: 0 1 22rem; min-width: 0; justify-content: flex-end; gap: .9rem; }
+  .header-actions .search-input { flex: 1 1 6rem; width: auto; min-width: 0; }
+  .header-actions #artist-filter { flex: 0 1 9.5rem; min-width: 0; }
+}
+@media (max-width: 1024px) {
+  #catalog-grid.catalog-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 768px) {
+  :root { --site-gutter: 1rem; }
+  .header-inner { padding: .85rem var(--site-gutter) .7rem; column-gap: .75rem; row-gap: .6rem; }
+  .site-title { flex: 1 1 auto; font-size: clamp(1.05rem, 5.1vw, 1.3rem); }   /* the name and the link share a line down to 360px */
+  .site-nav { flex: 0 0 auto; }
+  .nav-link--purchase { margin: 0; padding: .25rem 0; font-size: .78rem; }
+  .header-actions { display: flex; gap: .75rem; }
+  .header-actions #artist-filter { display: block; flex: 0 0 42%; min-width: 0; max-width: none; }
+  .sp-title { padding-top: 40px; }
+  .sp-row { margin-top: 36px; }
+  .sp-label { font-size: .95rem; letter-spacing: 2.5px; }
+  .sp-viewport { margin-top: calc(1.4rem - 12px); }
+  .sp-list-head { margin-top: 2.75rem; padding-top: 1.5rem; }
+  #catalog-grid.catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.25rem 1rem; padding: 1.5rem var(--site-gutter) 3rem; }
+  #catalog-grid .card-artist { font-size: 1.05rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sp-track, .sp-cover, #catalog-grid .card-image-wrap .cover-img { transition: none; }
+}
