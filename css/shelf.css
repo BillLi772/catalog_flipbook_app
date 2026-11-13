@@ -129,7 +129,7 @@
 
 .bk-info {
   position: relative; flex: 0 0 var(--iw); height: 100%; box-sizing: border-box;
-  display: flex; flex-direction: column; padding: 0 0 0 1.75rem;
+  display: flex; flex-direction: column; padding: 0 0 .65rem 1.75rem;   /* last line sits just above the shelf board */
   opacity: 0; transform: translateX(16px);
   transition: opacity .3s ease, transform .5s var(--settle);
 }
