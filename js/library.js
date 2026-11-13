@@ -13,7 +13,7 @@ const Library = (() => {
 
   // Entries that aren't personal names and must never be flipped.
   const NON_PERSON = new Set([
-    'AND OR', 'Group Exhibition', 'LA Artists', 'MOPA', 'Grasshopper',
+    'AND OR', 'AND / OR', 'Group Exhibition', 'LA Artists', 'MOPA', 'Grasshopper',
   ]);
 
   // Names the default rule gets wrong (compound surnames, particles) and names
@@ -40,9 +40,9 @@ const Library = (() => {
   let _artistFilter = '';   // selected artist name, or '' for all
   let _searchQuery = '';
   let _sortOrder = 'alpha';
-  let _heroCatalog = null;  // picked once on load, stays fixed
   let _imageObserver = null;
   let _initialized = false;
+  let _controlsReady = false; // search box and artist list are wired once
 
   // DOM refs (populated on init)
   let _heroEl, _gridEl, _noResultsEl, _countEl;
@@ -59,10 +59,16 @@ const Library = (() => {
     _setupImageObserver();
     await _loadCatalogs();
 
-    _setupSearch();
-    _setupSort();
-    _setupArtistFilter();
-    _setupNavFilter();
+    // app.js calls init() every time the library is shown, including on the way
+    // back from the reader. Wire the controls only once: a second pass listed
+    // every artist twice and made each keystroke filter twice.
+    if (!_controlsReady && _allCatalogs.length) {
+      _setupSearch();
+      _setupSort();
+      _setupArtistFilter();
+      _setupNavFilter();
+      _controlsReady = true;
+    }
 
     _initialized = true;
   }
@@ -81,14 +87,15 @@ const Library = (() => {
 
   async function _loadCatalogs() {
     try {
-      const resp = await fetch('/catalogs.json?v=' + Date.now());
+      // 'no-cache' asks the server every time but downloads again only when the
+      // file changed (the old ?v=timestamp downloaded it in full on every visit).
+      const resp = await fetch('/catalogs.json', { cache: 'no-cache' });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
       _allCatalogs = data.catalogs || [];
-      _filtered = [..._allCatalogs];
-      // Pick a random hero once — stays the same for the whole session
-      _heroCatalog = _allCatalogs[Math.floor(Math.random() * _allCatalogs.length)] || null;
-      _sortAndRender();
+      // Keep whatever search or artist is already chosen: this runs again when
+      // the reader closes, and the controls still show their values.
+      _applyFilters();
 
       document.getElementById('loading-state').hidden = true;
       document.getElementById('library-content').hidden = false;
@@ -104,7 +111,7 @@ const Library = (() => {
 
   function _sortAndRender() {
     const sorted = _sortCatalogs([..._filtered], _sortOrder);
-    _renderHero(sorted);
+    _renderHero();
     _renderGrid(sorted);
     _updateCount(sorted.length);
   }
@@ -126,32 +133,23 @@ const Library = (() => {
     }
   }
 
-  function _renderHero(sorted) {
-    // Hide hero whenever search or artist filter is active
-    if (_searchQuery || _artistFilter) {
+  // The top of the page is the title and the "Selected publications" row
+  // (js/selected.js + css/publications.css). It is built once and then only
+  // shown or hidden: hidden whenever a search or an artist filter is active.
+  function _renderHero() {
+    if (typeof Selected === 'undefined' || !_allCatalogs.length) {   // no selected.js, or nothing to show: list only
       _heroEl.hidden = true;
-      _heroEl.innerHTML = '';
       return;
     }
-    _heroEl.hidden = false;
-
-    // Use the randomly chosen catalog (picked once on load)
-    const featured = _heroCatalog || sorted[0];
-    if (!featured) {
-      _heroEl.innerHTML = '';
-      return;
+    if (!_heroEl.firstElementChild) {
+      Selected.render(_heroEl, _allCatalogs, {
+        splitTitle,
+        artistKey: _artistName,
+        navigate: path => App.navigate(path),
+      });
     }
-    _heroEl.innerHTML = _heroCardHTML(featured);
-    const card = _heroEl.querySelector('.hero-card');
-    card.addEventListener('click', () => App.navigate(`/catalog/${featured.id}`));
-    card.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' ') App.navigate(`/catalog/${featured.id}`);
-    });
-    const heroImg = _heroEl.querySelector('.cover-img');
-    if (heroImg) {
-      if (heroImg.complete) heroImg.classList.add('loaded');
-      else heroImg.addEventListener('load', () => heroImg.classList.add('loaded'));
-    }
+    _heroEl.hidden = Boolean(_searchQuery || _artistFilter);
+    if (!_heroEl.hidden) Selected.restart();   // it rests while hidden
   }
 
   function _renderGrid(sorted) {
@@ -189,34 +187,6 @@ const Library = (() => {
   // ──────────────────────────────────────────────
   // HTML templates
   // ──────────────────────────────────────────────
-
-  function _heroCardHTML(c) {
-    const color = c.color || '#e0dbd4';
-    const hasDriveId = c.driveFileId && !c.driveFileId.startsWith('sample_');
-    const thumb = hasDriveId ? _thumbUrl(c.driveFileId, 1200) : null;
-    // Split "Artist : Catalog Name", with the artist flipped to natural order
-    const { artist: artistLabel, catalog: catalogTitle } = splitTitle(c.title);
-    const label = displayTitle(c.title);
-    return `
-      <article class="hero-card" tabindex="0" role="button" aria-label="Open ${_esc(label)}">
-        <div class="hero-image-wrap">
-          ${thumb ? `<img class="cover-img" src="${_esc(thumb)}" alt="" loading="eager"
-                          decoding="async" fetchpriority="high" aria-hidden="true">` : ''}
-          <div class="hero-cover-placeholder" style="background-color:${_esc(color)}${!thumb ? ';position:relative' : ''}">
-            <span class="placeholder-title">${_esc(label)}</span>
-          </div>
-        </div>
-        <div class="hero-info" style="border-left: 3px solid ${_esc(color)}">
-          ${artistLabel ? `<p class="hero-artist">${_esc(artistLabel)}</p>` : ''}
-          <h2 class="hero-title">${_esc(catalogTitle)}</h2>
-          ${c.subtitle ? `<p class="hero-subtitle">${_esc(c.subtitle)}</p>` : ''}
-          ${(c.date || c.pageCount > 0) ? `<p class="hero-meta">
-            ${c.date ? `<span>${_formatDate(c.date)}</span>` : ''}
-            ${c.pageCount > 0 ? `<span>${c.pageCount} pages</span>` : ''}
-          </p>` : ''}
-        </div>
-      </article>`;
-  }
 
   // Covers come straight from Google's image server (the files are public), not
   // through the Cloudflare Worker: images need no CORS, and sending ~200 covers
@@ -311,13 +281,18 @@ const Library = (() => {
     return [...parts.slice(1), parts[0]].join(' ');
   }
 
+  /** "Off The Wall" -> "Off the Wall" (see Selected.prettyTitle); unchanged if selected.js is missing. */
+  function _titleCase(text) {
+    return typeof Selected !== 'undefined' && Selected.prettyTitle ? Selected.prettyTitle(text) : text;
+  }
+
   /** Split a raw title into { artist, catalog } with the artist in natural order. */
   function splitTitle(title) {
-    if (!title.includes(' : ')) return { artist: '', catalog: title.trim() };
+    if (!title.includes(' : ')) return { artist: '', catalog: _titleCase(title.trim()) };
     const [rawArtist, ...rest] = title.split(' : ');
     return {
       artist: displayArtist(NAME_ALIASES[rawArtist.trim()] || rawArtist.trim()),
-      catalog: rest.join(' : ').trim(),
+      catalog: _titleCase(rest.join(' : ').trim()),
     };
   }
 
