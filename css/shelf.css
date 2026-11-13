@@ -1,0 +1,275 @@
+/* ==========================================================================
+   shelf.css: Publications top section ("On the shelf") and an LGDR-style list.
+   Load after style.css. Reuses the existing design tokens where they exist.
+   ========================================================================== */
+
+/* The shelf brings its own spacing, so the old hero wrapper steps aside. */
+#hero-section { max-width: none; padding: 0; }
+
+.bk {
+  --h: clamp(300px, 29vw, 380px);      /* spine height = catalogue height       */
+  --ar: 1.294;                          /* every cover is 11 x 8.5, landscape     */
+  --cw: calc(var(--h) * var(--ar));     /* cover width once pulled out           */
+  --iw: clamp(270px, 27vw, 340px);      /* details panel width                   */
+  --k: 1;                               /* spine thickness scale                 */
+  --pull: cubic-bezier(.65, 0, .35, 1);  /* the two curves Time & Space uses      */
+  --settle: cubic-bezier(.22, 1, .36, 1);
+  --rule: var(--color-border, #e0e0e0);
+  --muted: var(--color-text-muted, #666);
+  --accent: var(--color-accent, #d4002a);
+  --ink-main: var(--color-text, #000);
+  max-width: var(--max-width, 1400px);
+  margin: 0 auto;
+  padding: 3rem 2rem 0;
+  color: var(--ink-main);
+  font-family: var(--font-primary, 'Libre Franklin', Arial, sans-serif);
+}
+.bk[hidden] { display: none; }
+
+/* ── Title row ─────────────────────────────── */
+.bk-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 1.5rem;
+  border-top: 1px solid var(--ink-main); padding-top: .9rem;
+}
+.bk-title {
+  margin: 0; font-size: clamp(2.25rem, 4.6vw, 3.75rem); font-weight: 900;
+  letter-spacing: -.035em; line-height: .92;
+}
+.bk-count, .bk-status, .bk-list-note, .bk-pos {
+  margin: 0; font-size: .6875rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.bk-count { white-space: nowrap; }
+.bk-intro { max-width: 44ch; margin: 1rem 0 0; font-size: 1rem; line-height: 1.5; color: #333; }
+
+/* ── The shelf ─────────────────────────────── */
+.bk-shelf-wrap { position: relative; margin-top: 2.25rem; }
+.bk-shelf {
+  position: relative; list-style: none; margin: 0; padding: 16px 0 0;
+  display: flex; align-items: flex-end; gap: 3px;
+  overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain;
+  scrollbar-width: none; scroll-behavior: smooth;
+  border-bottom: 1px solid var(--ink-main);   /* the shelf board */
+}
+.bk-shelf::-webkit-scrollbar { display: none; }
+
+/* Soft fades hint there is more shelf off to either side. */
+.bk-shelf-wrap::before, .bk-shelf-wrap::after {
+  content: ''; position: absolute; z-index: 2; top: 16px; bottom: 1px; width: 56px;
+  pointer-events: none; opacity: 0; transition: opacity .3s ease;
+}
+.bk-shelf-wrap::before { left: 0; background: linear-gradient(90deg, #fff, rgba(255, 255, 255, 0)); }
+.bk-shelf-wrap::after { right: 0; background: linear-gradient(270deg, #fff, rgba(255, 255, 255, 0)); }
+.bk-shelf-wrap.is-left::before, .bk-shelf-wrap.is-right::after { opacity: 1; }
+
+/* ── A book ────────────────────────────────── */
+.bk-book {
+  --sw: calc(var(--w, 34px) * var(--k));
+  position: relative; flex: 0 0 auto; display: flex;
+  width: var(--sw); height: var(--h);
+  transition: width .76s var(--pull);
+}
+.bk-book.is-open { width: calc(var(--sw) + var(--cw) + var(--iw)); z-index: 3; }   /* above the edge fades */
+
+.bk-spine {
+  -webkit-appearance: none; appearance: none; border: 0; border-radius: 0; margin: 0; font: inherit;
+  position: relative; flex: 0 0 var(--sw); width: var(--sw); height: 100%; box-sizing: border-box;
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: .5rem;
+  padding: .9rem 0 .6rem; overflow: hidden; cursor: pointer;
+  background: var(--spine, #e9e7e2); color: var(--ink, #111);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .07);
+  transition: transform .35s var(--settle), background-color .6s ease, color .6s ease;
+}
+/* A little light across the spine so it reads as rounded, not flat. */
+.bk-spine::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgba(0, 0, 0, .16), rgba(0, 0, 0, 0) 16%, rgba(255, 255, 255, .14) 34%,
+    rgba(255, 255, 255, 0) 56%, rgba(0, 0, 0, .06) 84%, rgba(0, 0, 0, .2));
+}
+.bk-book:not(.is-open) .bk-spine:hover,
+.bk-book:not(.is-open) .bk-spine:focus-visible { transform: translateY(-10px); }
+.bk-spine:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.bk-spine-label {
+  writing-mode: vertical-rl; flex: 1 1 0; min-height: 0; min-width: 0;
+  display: flex; align-items: center; gap: .75em; overflow: hidden; white-space: nowrap; line-height: 1;
+}
+.bk-spine-artist, .bk-spine-title { min-height: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.bk-spine-artist { flex: 0 0 auto; max-height: 100%; font-size: .64rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.bk-spine-title { flex: 0 4 auto; font-size: .72rem; font-weight: 400; }
+.bk-spine-mark { flex: 0 0 auto; font-size: .5rem; font-weight: 900; letter-spacing: .06em; opacity: .7; }
+
+/* ── Pulled out: cover + details ───────────── */
+.bk-open { flex: 1 1 auto; min-width: 0; overflow: hidden; }
+.bk-open-inner { display: flex; width: calc(var(--cw) + var(--iw)); height: 100%; }
+
+.bk-cover {
+  position: relative; display: block; flex: 0 0 var(--cw); height: 100%; overflow: hidden;
+  background: var(--spine, #e9e7e2); color: var(--ink, #111); text-decoration: none;
+}
+.bk-cover-ph {   /* shows while the cover loads, and stays if it can't */
+  position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: .35rem;
+  padding: 1.25rem;
+}
+.bk-cover-ph span { font-size: .6875rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.bk-cover-ph b { font-size: 1.5rem; font-weight: 900; letter-spacing: -.02em; line-height: 1.05; }
+.bk-cover img {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  opacity: 0; transform: translateX(-14%);
+  transition: opacity .45s ease, transform .7s var(--settle);
+}
+.bk-book.is-open .bk-cover img.is-loaded { opacity: 1; transform: none; transition-delay: .12s; }
+.bk-cover::after {
+  content: 'Read \2192'; position: absolute; left: 1rem; bottom: .9rem; padding: .5rem .75rem;
+  background: rgba(0, 0, 0, .8); color: #fff; font-size: .6875rem; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; opacity: 0; transform: translateY(6px);
+  transition: opacity .25s ease, transform .35s var(--settle);
+}
+.bk-cover:hover::after { opacity: 1; transform: none; }
+
+.bk-info {
+  position: relative; flex: 0 0 var(--iw); height: 100%; box-sizing: border-box;
+  display: flex; flex-direction: column; padding: 0 0 0 1.75rem;
+  opacity: 0; transform: translateX(16px);
+  transition: opacity .3s ease, transform .5s var(--settle);
+}
+.bk-book.is-open .bk-info { opacity: 1; transform: none; transition-delay: .32s, .28s; }
+.bk-info > *, .bk-caption > * { flex-shrink: 0; overflow-wrap: anywhere; }
+
+.bk-pos { margin-bottom: .9rem; }
+.bk-kicker {
+  margin: 0 0 .4rem; padding-right: 2rem; font-size: .75rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--accent);
+}
+.bk-name {
+  margin: 0; padding-right: 2rem; font-size: clamp(1.35rem, 2.2vw, 2rem); font-weight: 900;
+  letter-spacing: -.025em; line-height: 1.06;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
+}
+.bk-meta { margin: auto 0 0; padding-top: 1rem; font-size: .75rem; }
+.bk-meta div { display: grid; grid-template-columns: 6.25rem 1fr; gap: .5rem; padding: .45rem 0; border-top: 1px solid var(--rule); }
+.bk-meta div:last-child { border-bottom: 1px solid var(--rule); }
+.bk-meta dt { font-size: .625rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.bk-meta dd { margin: 0; }
+
+.bk-actions { margin-top: .9rem; }
+.bk-read {
+  display: inline-flex; align-items: center; gap: .5em; padding: .7rem 1rem;
+  font-size: .6875rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; text-decoration: none;
+  background: var(--ink-main); color: #fff; border: 1px solid var(--ink-main);
+  transition: background-color .2s, border-color .2s;
+}
+.bk-read:hover { background: var(--accent); border-color: var(--accent); }
+.bk-read:focus-visible, .bk-buy:focus-visible, .bk-more:focus-visible, .bk-close:focus-visible,
+.bk-arrows button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* One quiet line of secondary links under the button. */
+.bk-links { display: flex; flex-wrap: wrap; gap: .2rem 1.1rem; margin-top: .7rem; font-size: .75rem; line-height: 1.4; }
+.bk-buy, .bk-more {
+  -webkit-appearance: none; appearance: none; border: 0; background: none; padding: 0; margin: 0;
+  font: inherit; color: var(--muted); text-align: left; cursor: pointer;
+  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px;
+}
+.bk-buy:hover, .bk-more:hover { color: var(--accent); }
+.bk-close {
+  -webkit-appearance: none; appearance: none; border: 0; background: none; padding: 0; font: inherit;
+  position: absolute; top: -.4rem; right: 0; width: 2rem; height: 2rem;
+  font-size: 1.5rem; line-height: 1; color: var(--muted); cursor: pointer;
+}
+.bk-close:hover { color: var(--ink-main); }
+
+/* ── Under the shelf ───────────────────────── */
+.bk-foot { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 2.75rem; }
+.bk-arrows { display: flex; }
+.bk-arrows button {
+  -webkit-appearance: none; appearance: none; border: 0; background: none; padding: 0; font: inherit;
+  width: 2.5rem; height: 2.5rem; font-size: 1.1rem; color: var(--ink-main); cursor: pointer;
+}
+.bk-arrows button:hover:not(:disabled) { color: var(--accent); }
+.bk-arrows button:disabled { opacity: .2; cursor: default; }
+.bk:not(.bk--overflow) .bk-arrows { visibility: hidden; }
+
+.bk-caption { display: none; }   /* details move here on phones */
+
+.bk-list-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
+  margin-top: 4.5rem; padding-top: .9rem; border-top: 1px solid var(--ink-main);
+}
+.bk-list-title { margin: 0; font-size: .8125rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.bk-num { color: var(--muted); font-weight: 600; }
+
+/* ── Everything listed, LGDR-style ─────────────
+   Uniform tiles: each cover sits on the same light ground, like a photographed
+   book, with artist and title underneath. Restyles the existing grid, no JS. */
+#catalog-grid.catalog-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3.5rem 1.75rem; padding-top: 1.75rem;
+}
+#catalog-grid .card-image-wrap {
+  aspect-ratio: 1 / 1; display: grid; place-items: center; padding: 12%; margin-bottom: .85rem; background: #f1f0ed;
+}
+#catalog-grid .card-image-wrap .cover-img {
+  width: 100%; height: auto;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, .06), 0 14px 24px -14px rgba(0, 0, 0, .5);
+  transition: opacity .4s ease, transform .5s cubic-bezier(.22, 1, .36, 1), box-shadow .5s ease;
+}
+#catalog-grid .catalog-card:hover .card-image-wrap .cover-img {
+  transform: translateY(-6px);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, .06), 0 24px 30px -18px rgba(0, 0, 0, .5);
+}
+#catalog-grid .card-cover-placeholder { background-color: #f1f0ed !important; }
+#catalog-grid .catalog-card:hover .card-cover-placeholder { transform: none; }
+#catalog-grid .card-artist {
+  margin: 0 0 .15rem; font-size: .8125rem; font-weight: 600; letter-spacing: 0; text-transform: none;
+  color: var(--color-text, #000);
+}
+#catalog-grid .card-title {
+  margin: 0; font-size: .8125rem; font-weight: 400; font-style: italic; letter-spacing: 0; line-height: 1.35; color: #555;
+}
+#catalog-grid .catalog-card:hover .card-artist,
+#catalog-grid .catalog-card:hover .card-title { color: var(--color-accent, #d4002a); }
+/* a long unbroken title ("Strats/DADADADA/Complications") must wrap, not widen the page */
+#catalog-grid .catalog-card { min-width: 0; }
+#catalog-grid .card-artist, #catalog-grid .card-title { overflow-wrap: anywhere; }
+
+/* ── Header: keep "Purchase Catalogs" visible on tablets, artist filter on phones ── */
+@media (min-width: 769px) and (max-width: 1100px) {
+  .header-inner { gap: 1rem; }
+  .nav-link--home { display: none; }
+  .site-nav { flex: 0 0 auto; overflow: visible; }
+  /* the search box and artist menu share whatever width is left */
+  .header-actions { flex: 1 1 0; min-width: 0; justify-content: flex-end; gap: .75rem; }
+  .header-actions .search-input { flex: 1 1 7rem; width: auto; min-width: 0; max-width: 11.25rem; }
+  .header-actions #artist-filter { flex: 0 1 10rem; min-width: 0; }
+}
+
+/* ── Breakpoints ───────────────────────────── */
+@media (max-width: 1024px) {
+  #catalog-grid.catalog-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+/* Too narrow for cover and details side by side: the details move under the shelf. */
+@media (max-width: 800px) {
+  .bk { --iw: 0px; }
+  .bk-info { display: none; }
+  .bk-caption:not([hidden]) { display: block; position: relative; padding-top: .25rem; }
+  .bk-caption .bk-meta { margin-top: .9rem; padding-top: 0; }
+}
+@media (max-width: 768px) {
+  .bk { padding: 1.75rem 1rem 0; }
+  .header-actions { display: flex; gap: .5rem; }
+  .header-actions #artist-filter { display: block; flex: 0 0 42%; min-width: 0; max-width: none; }
+  #catalog-grid.catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.25rem 1rem; padding: 1.25rem 1rem 2.5rem; }
+}
+@media (max-width: 639px) {
+  /* the pulled-out cover always fits the screen, down to a 320px phone */
+  .bk { --h: min(230px, calc((100vw - 2rem - 40px) / var(--ar))); --k: .86; }
+  .bk-head { flex-wrap: wrap; row-gap: .35rem; }
+  .bk-intro { font-size: .9375rem; }
+  .bk-shelf-wrap { margin-top: 1.5rem; }
+  .bk-cover::after { display: none; }
+  .bk-list-head { margin-top: 3rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bk-book, .bk *, .bk *::before, .bk *::after { transition-duration: .01ms !important; transition-delay: 0s !important; }
+  .bk-shelf { scroll-behavior: auto; }
+}
