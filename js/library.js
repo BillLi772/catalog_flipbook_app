@@ -189,8 +189,16 @@ const Library = (() => {
 
     // Fade in cover images when they load
     _gridEl.querySelectorAll('.cover-img').forEach(img => {
-      if (img.complete) { img.classList.add('loaded'); }
+      if (img.complete && img.naturalWidth > 0) { img.classList.add('loaded'); }
       else { img.addEventListener('load', () => img.classList.add('loaded')); }
+      // Should Google ever stop honouring the JPEG option, ask once more the plain way.
+      img.addEventListener('error', () => {
+        if (img.dataset.retried || !img.dataset.plain) return;
+        img.dataset.retried = '1';
+        img.removeAttribute('srcset');
+        img.removeAttribute('sizes');
+        img.src = img.dataset.plain;
+      });
     });
   }
 
@@ -205,14 +213,26 @@ const Library = (() => {
   // Covers come straight from Google's image server (the files are public), not
   // through the Cloudflare Worker: images need no CORS, and sending ~200 covers
   // per visit through the Worker used up its 100,000 requests/day free limit.
-  function _thumbUrl(driveFileId, width = 600) {
-    return `https://lh3.googleusercontent.com/d/${encodeURIComponent(driveFileId)}=w${width}`;
+  //
+  // Left alone, Google sends each cover as a PNG of about 300 KB, which made the
+  // list slow to fill in while scrolling. "-rj" asks for a JPEG instead: about a
+  // sixth of the size and no different to the eye.
+  function _thumbUrl(driveFileId, width = 600, format = '-rj') {
+    return `https://lh3.googleusercontent.com/d/${encodeURIComponent(driveFileId)}=w${width}${format}`;
   }
+
+  // A cover is offered in three widths and the browser takes the one that suits
+  // the screen (a phone needs far less than a large retina display). COVER_SIZES
+  // says roughly how wide a cover is drawn at each window width; it follows the
+  // columns set in css/publications.css.
+  const COVER_WIDTHS = [400, 600, 800];
+  const COVER_SIZES = '(max-width: 768px) 36vw, (max-width: 1024px) 23vw, (max-width: 1599px) 17vw, (max-width: 2099px) 13.5vw, 11vw';
 
   function _cardHTML(c, index) {
     const color = c.color || '#e0dbd4';
     const hasDriveId = c.driveFileId && !c.driveFileId.startsWith('sample_');
     const thumb = hasDriveId ? _thumbUrl(c.driveFileId) : null;
+    const srcset = hasDriveId ? COVER_WIDTHS.map(w => `${_thumbUrl(c.driveFileId, w)} ${w}w`).join(', ') : '';
     const { artist, catalog } = splitTitle(c.title);
     const label = displayTitle(c.title);
     // The first row is above the fold on most screens — load those eagerly so
@@ -222,7 +242,8 @@ const Library = (() => {
       <article class="catalog-card" data-id="${_esc(c.id)}" tabindex="0"
                role="button" aria-label="Open ${_esc(label)}">
         <div class="card-image-wrap">
-          ${thumb ? `<img class="cover-img" src="${_esc(thumb)}" alt="" aria-hidden="true"
+          ${thumb ? `<img class="cover-img" src="${_esc(thumb)}" srcset="${_esc(srcset)}" sizes="${COVER_SIZES}"
+                          data-plain="${_esc(_thumbUrl(c.driveFileId, 600, ''))}" alt="" aria-hidden="true"
                           loading="${eager ? 'eager' : 'lazy'}" decoding="async"
                           ${eager ? 'fetchpriority="high"' : ''}>` : ''}
           <div class="card-cover-placeholder" style="background-color:${_esc(color)}${!thumb ? ';position:relative' : ''}">

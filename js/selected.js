@@ -28,7 +28,8 @@ const Selected = (() => {
     title: 'Publications',
     label: 'Selected publications',
     showsUrl: '/api/current',   // answers { shows: [{ artist, title }] }; '' to skip
-    coverUrl: (c, w) => `https://lh3.googleusercontent.com/d/${encodeURIComponent(c.driveFileId)}=w${w}`,
+    // "-rj" asks Google for a JPEG; left alone it sends a PNG several times the size
+    coverUrl: (c, w, plain) => `https://lh3.googleusercontent.com/d/${encodeURIComponent(c.driveFileId)}=w${w}${plain ? '' : '-rj'}`,
     readPath: c => `/catalog/${encodeURIComponent(c.id)}`,
     navigate: null,        // App.navigate, so reading stays inside the app
     splitTitle: null,      // Library.splitTitle: raw title -> { artist, catalog }
@@ -39,8 +40,8 @@ const Selected = (() => {
   const SHOWS_FRESH = 6 * 60 * 60 * 1000;   // ask again after six hours
   // Cover images are offered in three widths; the browser takes the one that suits the screen.
   // COVER_SIZES mirrors the cover width set in css/publications.css (--sp-w).
-  const COVER_WIDTHS = [480, 800, 1200];
-  const COVER_SIZES = '(min-width: 1405px) 427px, (max-width: 680px) 207px, 30.4vw';
+  const COVER_WIDTHS = [480, 720, 1040];
+  const COVER_SIZES = '(min-width: 1703px) 518px, (max-width: 680px) 207px, 30.4vw';
   const SMALL_WORDS = new Set('a an and as at but by de des du en et for from in into la le of on or the to via with'.split(' '));
 
   let o = DEFAULTS;
@@ -154,7 +155,7 @@ const Selected = (() => {
         <a class="sp-card" href="${esc(o.readPath(c))}" data-read draggable="false"${copy ? ' tabindex="-1"' : ` aria-label="${esc(name)}"`}>
           <span class="sp-cover">
             <span class="sp-ph" aria-hidden="true"><span>${esc(p.artist)}</span><b>${esc(p.title)}</b></span>
-            <img alt="" draggable="false" decoding="async" src="${esc(o.coverUrl(c, 800))}" srcset="${esc(srcset)}" sizes="${COVER_SIZES}">
+            <img alt="" draggable="false" decoding="async" src="${esc(o.coverUrl(c, 720))}" srcset="${esc(srcset)}" sizes="${COVER_SIZES}" data-plain="${esc(o.coverUrl(c, 720, true))}">
           </span>
           <span class="sp-caption" aria-hidden="true">
             <span class="sp-name">${esc(p.artist || p.title)}</span>
@@ -381,10 +382,20 @@ const Selected = (() => {
     o.navigate(read.getAttribute('href'));
   }
 
-  /** A cover that will not load leaves its plain titled block instead of a broken image. */
+  /**
+   * A cover that will not load is asked for once more the plain way (in case Google ever stops
+   * honouring the JPEG option). If that fails too it leaves its plain titled block, not a broken image.
+   */
   function onImgError(e) {
     const img = e.target;
     if (!img || img.tagName !== 'IMG') return;
+    if (img.dataset.plain && !img.dataset.retried) {
+      img.dataset.retried = '1';
+      img.removeAttribute('srcset');
+      img.removeAttribute('sizes');
+      img.src = img.dataset.plain;
+      return;
+    }
     const cover = img.closest('.sp-cover');
     if (cover) cover.classList.add('no-img');
     img.remove();
