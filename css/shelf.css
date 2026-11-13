@@ -1,51 +1,41 @@
 /* ==========================================================================
-   shelf.css: Publications top section ("On the shelf") and an LGDR-style list.
-   Load after style.css. Reuses the existing design tokens where they exist.
+   shelf.css: the bookshelf at the top of the Publications page, and the look
+   of the list below it. Load after style.css; it reuses that file's tokens.
    ========================================================================== */
 
 /* The shelf brings its own spacing, so the old hero wrapper steps aside. */
 #hero-section { max-width: none; padding: 0; }
 
 .bk {
-  --h: clamp(300px, 29vw, 380px);      /* spine height = catalogue height       */
-  --ar: 1.294;                          /* every cover is 11 x 8.5, landscape     */
-  --cw: calc(var(--h) * var(--ar));     /* cover width once pulled out           */
-  --iw: clamp(270px, 27vw, 340px);      /* details panel width                   */
-  --k: 1;                               /* spine thickness scale                 */
-  --pull: cubic-bezier(.65, 0, .35, 1);  /* the two curves Time & Space uses      */
+  --h: clamp(300px, 29vw, 380px);       /* height of the shelf = height of a cover   */
+  --ar: 1.294;                           /* every cover is 11 x 8.5, landscape         */
+  --cw: calc(var(--h) * var(--ar));      /* width of an open cover                     */
+  --iw: clamp(250px, 24vw, 320px);       /* width of the details beside it             */
+  --k: 1;                                /* strip width scale                          */
+  --pull: cubic-bezier(.65, 0, .35, 1);
   --settle: cubic-bezier(.22, 1, .36, 1);
-  --rule: var(--color-border, #e0e0e0);
   --muted: var(--color-text-muted, #666);
   --accent: var(--color-accent, #d4002a);
   --ink-main: var(--color-text, #000);
   max-width: var(--max-width, 1400px);
   margin: 0 auto;
-  padding: 3rem 2rem 0;
+  padding: 3.25rem 2rem 0;
   color: var(--ink-main);
   font-family: var(--font-primary, 'Libre Franklin', Arial, sans-serif);
 }
 .bk[hidden] { display: none; }
 
-/* ── Title row ─────────────────────────────── */
-.bk-head {
-  display: flex; align-items: baseline; justify-content: space-between; gap: 1.5rem;
-  border-top: 1px solid var(--ink-main); padding-top: .9rem;
-}
+/* ── Title ─────────────────────────────────── */
 .bk-title {
   margin: 0; font-size: clamp(2.25rem, 4.6vw, 3.75rem); font-weight: 900;
-  letter-spacing: -.035em; line-height: .92;
+  letter-spacing: -.035em; line-height: .95;
 }
-.bk-count, .bk-status, .bk-list-note, .bk-pos {
-  margin: 0; font-size: .6875rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
-  color: var(--muted); font-variant-numeric: tabular-nums;
-}
-.bk-count { white-space: nowrap; }
 .bk-intro { max-width: 44ch; margin: 1rem 0 0; font-size: 1rem; line-height: 1.5; color: #333; }
 
 /* ── The shelf ─────────────────────────────── */
-.bk-shelf-wrap { position: relative; margin-top: 2.25rem; }
+.bk-shelf-wrap { position: relative; margin-top: 2rem; }
 .bk-shelf {
-  position: relative; list-style: none; margin: 0; padding: 16px 0 0;
+  position: relative; list-style: none; margin: 0; padding: 14px 0 0;
   display: flex; align-items: flex-end; gap: 3px;
   overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain;
   scrollbar-width: none; scroll-behavior: smooth;
@@ -55,131 +45,140 @@
 
 /* Soft fades hint there is more shelf off to either side. */
 .bk-shelf-wrap::before, .bk-shelf-wrap::after {
-  content: ''; position: absolute; z-index: 2; top: 16px; bottom: 1px; width: 56px;
+  content: ''; position: absolute; z-index: 4; top: 14px; bottom: 1px; width: 56px;
   pointer-events: none; opacity: 0; transition: opacity .3s ease;
 }
 .bk-shelf-wrap::before { left: 0; background: linear-gradient(90deg, #fff, rgba(255, 255, 255, 0)); }
 .bk-shelf-wrap::after { right: 0; background: linear-gradient(270deg, #fff, rgba(255, 255, 255, 0)); }
 .bk-shelf-wrap.is-left::before, .bk-shelf-wrap.is-right::after { opacity: 1; }
 
-/* ── A book ────────────────────────────────── */
+/* ── A book ────────────────────────────────────
+   .bk-face is a window onto the cover. Closed, it is a narrow strip showing one
+   band of the cover (--f says which); open, it is the whole cover. */
 .bk-book {
-  --sw: calc(var(--w, 34px) * var(--k));
+  --sw: calc(var(--w, 38px) * var(--k));
   position: relative; flex: 0 0 auto; display: flex;
   width: var(--sw); height: var(--h);
   transition: width .76s var(--pull);
 }
-.bk-book.is-open { width: calc(var(--sw) + var(--cw) + var(--iw)); z-index: 3; }   /* above the edge fades */
+.bk-book.is-open { width: calc(var(--cw) + var(--iw)); z-index: 5; }   /* above the edge fades */
 
+.bk-face {
+  position: relative; flex: 0 0 auto; width: var(--sw); height: 100%; overflow: hidden;
+  background: var(--spine, #e9e7e2);
+  transition: width .76s var(--pull), transform .4s var(--settle), background-color .6s ease;
+}
+.bk-book.is-open .bk-face { width: var(--cw); }
+.bk-book:not(.is-open) .bk-face:hover,
+.bk-book:not(.is-open) .bk-face:focus-within { transform: translateY(-10px); }
+
+.bk-img, .bk-ph { position: absolute; top: 0; left: 0; width: var(--cw); height: 100%; }
+.bk-img {
+  max-width: none; object-fit: cover; opacity: 0;
+  transform: translateX(calc(var(--f, .5) * -1 * (var(--cw) - var(--sw))));
+  transition: transform .76s var(--pull), opacity .6s ease;
+}
+.bk-book[data-ready] .bk-img.is-loaded, .bk-book.is-open .bk-img.is-loaded { opacity: 1; }
+.bk-book.is-open .bk-img { transform: none; }
+
+/* A little light and shade so neighbouring strips read as separate spines. */
+.bk-face::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background: linear-gradient(90deg, rgba(0, 0, 0, .22), rgba(0, 0, 0, 0) 22%, rgba(255, 255, 255, .1) 42%,
+    rgba(255, 255, 255, 0) 60%, rgba(0, 0, 0, .14));
+  transition: opacity .5s ease;
+}
+.bk-book.is-open .bk-face::after { opacity: 0; }
+
+/* Only seen when a cover will not load: a plain spine, then a plain cover. */
+.bk-ph { color: var(--ink, #111); opacity: 0; pointer-events: none; transition: opacity .3s ease; }
+.bk-book.no-img .bk-ph { opacity: 1; }
+.bk-ph-spine {
+  position: absolute; top: 0; left: 0; width: var(--sw); height: 100%; box-sizing: border-box;
+  writing-mode: vertical-rl; display: flex; align-items: center; gap: .75em; padding: .9rem 0;
+  overflow: hidden; white-space: nowrap; font-size: .72rem; line-height: 1; transition: opacity .3s ease;
+}
+.bk-ph-spine b { flex: 0 0 auto; max-height: 100%; overflow: hidden; font-size: .64rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.bk-ph-spine span { flex: 0 4 auto; min-height: 0; overflow: hidden; text-overflow: ellipsis; }
+.bk-ph-cover {
+  position: absolute; inset: 0; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end;
+  gap: .35rem; padding: 1.25rem; opacity: 0; transition: opacity .3s ease .3s;
+}
+.bk-ph-cover span { font-size: .6875rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.bk-ph-cover b { font-size: 1.5rem; font-weight: 900; letter-spacing: -.02em; line-height: 1.05; }
+.bk-book.is-open .bk-ph-spine { opacity: 0; }
+.bk-book.is-open .bk-ph-cover { opacity: 1; }
+
+/* The strip is a button; once open, the cover is a link to the reader. */
+.bk-spine, .bk-cover { position: absolute; inset: 0; z-index: 2; display: block; }
 .bk-spine {
-  -webkit-appearance: none; appearance: none; border: 0; border-radius: 0; margin: 0; font: inherit;
-  position: relative; flex: 0 0 var(--sw); width: var(--sw); height: 100%; box-sizing: border-box;
-  display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: .5rem;
-  padding: .9rem 0 .6rem; overflow: hidden; cursor: pointer;
-  background: var(--spine, #e9e7e2); color: var(--ink, #111);
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .07);
-  transition: transform .35s var(--settle), background-color .6s ease, color .6s ease;
+  -webkit-appearance: none; appearance: none; width: 100%; height: 100%; margin: 0; padding: 0;
+  border: 0; border-radius: 0; background: none; cursor: pointer;
 }
-/* A little light across the spine so it reads as rounded, not flat. */
-.bk-spine::after {
-  content: ''; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(90deg, rgba(0, 0, 0, .16), rgba(0, 0, 0, 0) 16%, rgba(255, 255, 255, .14) 34%,
-    rgba(255, 255, 255, 0) 56%, rgba(0, 0, 0, .06) 84%, rgba(0, 0, 0, .2));
-}
-.bk-book:not(.is-open) .bk-spine:hover,
-.bk-book:not(.is-open) .bk-spine:focus-visible { transform: translateY(-10px); }
-.bk-spine:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-
-.bk-spine-label {
-  writing-mode: vertical-rl; flex: 1 1 0; min-height: 0; min-width: 0;
-  display: flex; align-items: center; gap: .75em; overflow: hidden; white-space: nowrap; line-height: 1;
-}
-.bk-spine-artist, .bk-spine-title { min-height: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.bk-spine-artist { flex: 0 0 auto; max-height: 100%; font-size: .64rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-.bk-spine-title { flex: 0 4 auto; font-size: .72rem; font-weight: 400; }
-.bk-spine-mark { flex: 0 0 auto; font-size: .5rem; font-weight: 900; letter-spacing: .06em; opacity: .7; }
-
-/* ── Pulled out: cover + details ───────────── */
-.bk-open { flex: 1 1 auto; min-width: 0; overflow: hidden; }
-.bk-open-inner { display: flex; width: calc(var(--cw) + var(--iw)); height: 100%; }
-
-.bk-cover {
-  position: relative; display: block; flex: 0 0 var(--cw); height: 100%; overflow: hidden;
-  background: var(--spine, #e9e7e2); color: var(--ink, #111); text-decoration: none;
-}
-.bk-cover-ph {   /* shows while the cover loads, and stays if it can't */
-  position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: .35rem;
-  padding: 1.25rem;
-}
-.bk-cover-ph span { font-size: .6875rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
-.bk-cover-ph b { font-size: 1.5rem; font-weight: 900; letter-spacing: -.02em; line-height: 1.05; }
-.bk-cover img {
-  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
-  opacity: 0; transform: translateX(-14%);
-  transition: opacity .45s ease, transform .7s var(--settle);
-}
-.bk-book.is-open .bk-cover img.is-loaded { opacity: 1; transform: none; transition-delay: .12s; }
+.bk-spine[hidden], .bk-cover[hidden] { display: none; }
+.bk-spine:focus-visible, .bk-cover:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .bk-cover::after {
   content: 'Read \2192'; position: absolute; left: 1rem; bottom: .9rem; padding: .5rem .75rem;
-  background: rgba(0, 0, 0, .8); color: #fff; font-size: .6875rem; font-weight: 700; letter-spacing: .1em;
+  background: rgba(0, 0, 0, .82); color: #fff; font-size: .6875rem; font-weight: 700; letter-spacing: .1em;
   text-transform: uppercase; opacity: 0; transform: translateY(6px);
   transition: opacity .25s ease, transform .35s var(--settle);
 }
-.bk-cover:hover::after { opacity: 1; transform: none; }
+.bk-cover:hover::after, .bk-cover:focus-visible::after { opacity: 1; transform: none; }
 
+/* ── Beside the open cover ─────────────────── */
+.bk-open { flex: 1 1 auto; min-width: 0; overflow: hidden; }
 .bk-info {
-  position: relative; flex: 0 0 var(--iw); height: 100%; box-sizing: border-box;
-  display: flex; flex-direction: column; padding: 0 0 .65rem 1.75rem;   /* last line sits just above the shelf board */
+  position: relative; width: var(--iw); height: 100%; box-sizing: border-box;
+  display: flex; flex-direction: column; align-items: flex-start; padding: .15rem 0 0 1.75rem;
   opacity: 0; transform: translateX(16px);
   transition: opacity .3s ease, transform .5s var(--settle);
 }
 .bk-book.is-open .bk-info { opacity: 1; transform: none; transition-delay: .32s, .28s; }
-.bk-info > *, .bk-caption > * { flex-shrink: 0; overflow-wrap: anywhere; }
+.bk-info > *, .bk-caption > * { flex-shrink: 0; max-width: 100%; overflow-wrap: anywhere; }
 
-.bk-pos { margin-bottom: .9rem; }
 .bk-kicker {
-  margin: 0 0 .4rem; padding-right: 2rem; font-size: .75rem; font-weight: 700; letter-spacing: .08em;
-  text-transform: uppercase; color: var(--accent);
+  -webkit-appearance: none; appearance: none; border: 0; background: none; padding: 0; font: inherit;
+  margin: 0 2.25rem .45rem 0; font-size: .75rem; font-weight: 700; letter-spacing: .08em; line-height: 1.3;
+  text-transform: uppercase; text-align: left; color: var(--accent);
 }
+/* an artist with several catalogues: the name is a link to all of them */
+.bk-more { cursor: pointer; text-decoration: underline transparent; text-decoration-thickness: 1px; text-underline-offset: 4px; transition: text-decoration-color .2s ease; }
+.bk-more:hover, .bk-more:focus-visible { text-decoration-color: currentColor; }
 .bk-name {
-  margin: 0; padding-right: 2rem; font-size: clamp(1.35rem, 2.2vw, 2rem); font-weight: 900;
-  letter-spacing: -.025em; line-height: 1.06;
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
+  margin: 0; padding-right: 2.25rem; font-size: clamp(1.5rem, 2.5vw, 2.25rem); font-weight: 900;
+  letter-spacing: -.03em; line-height: 1.04;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden;
 }
-.bk-meta { margin: auto 0 0; padding-top: 1rem; font-size: .75rem; }
-.bk-meta div { display: grid; grid-template-columns: 6.25rem 1fr; gap: .5rem; padding: .45rem 0; border-top: 1px solid var(--rule); }
-.bk-meta div:last-child { border-bottom: 1px solid var(--rule); }
-.bk-meta dt { font-size: .625rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-.bk-meta dd { margin: 0; }
-
-.bk-actions { margin-top: .9rem; }
+.bk-actions { margin-top: auto; }
+.bk-meta { margin: 0 0 .8rem; font-size: .75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .bk-read {
-  display: inline-flex; align-items: center; gap: .5em; padding: .7rem 1rem;
+  display: inline-flex; align-items: center; gap: .5em; padding: .75rem 1.1rem;
   font-size: .6875rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; text-decoration: none;
   background: var(--ink-main); color: #fff; border: 1px solid var(--ink-main);
   transition: background-color .2s, border-color .2s;
 }
 .bk-read:hover { background: var(--accent); border-color: var(--accent); }
-.bk-read:focus-visible, .bk-buy:focus-visible, .bk-more:focus-visible, .bk-close:focus-visible,
+.bk-read:focus-visible, .bk-more:focus-visible, .bk-close:focus-visible,
 .bk-arrows button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-/* One quiet line of secondary links under the button. */
-.bk-links { display: flex; flex-wrap: wrap; gap: .2rem 1.1rem; margin-top: .7rem; font-size: .75rem; line-height: 1.4; }
-.bk-buy, .bk-more {
-  -webkit-appearance: none; appearance: none; border: 0; background: none; padding: 0; margin: 0;
-  font: inherit; color: var(--muted); text-align: left; cursor: pointer;
-  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px;
-}
-.bk-buy:hover, .bk-more:hover { color: var(--accent); }
 .bk-close {
   -webkit-appearance: none; appearance: none; border: 0; background: none; padding: 0; font: inherit;
-  position: absolute; top: -.4rem; right: 0; width: 2rem; height: 2rem;
+  position: absolute; top: -.45rem; right: 0; width: 2rem; height: 2rem;
   font-size: 1.5rem; line-height: 1; color: var(--muted); cursor: pointer;
 }
 .bk-close:hover { color: var(--ink-main); }
 
 /* ── Under the shelf ───────────────────────── */
-.bk-foot { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 2.75rem; }
+.bk-foot { position: relative; display: flex; align-items: center; justify-content: flex-end; min-height: 2.75rem; }
+.bk-label {   /* the name of the strip under the pointer */
+  position: absolute; left: 0; top: 0; height: 100%; max-width: 100%; margin: 0;
+  display: flex; align-items: center; gap: .7em; white-space: nowrap; overflow: hidden;
+  font-size: .75rem; opacity: 0; pointer-events: none; transition: opacity .18s ease;
+}
+.bk-label.is-on { opacity: 1; }
+.bk-label b { font-size: .6875rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.bk-label span { color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+@media (hover: none) { .bk-label { display: none; } }
+
 .bk-arrows { display: flex; }
 .bk-arrows button {
   -webkit-appearance: none; appearance: none; border: 0; background: none; padding: 0; font: inherit;
@@ -189,13 +188,16 @@
 .bk-arrows button:disabled { opacity: .2; cursor: default; }
 .bk:not(.bk--overflow) .bk-arrows { visibility: hidden; }
 
-.bk-caption { display: none; }   /* details move here on phones */
+.bk-caption { display: none; }   /* the details move here on narrow screens */
 
 .bk-list-head {
   display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
-  margin-top: 4.5rem; padding-top: .9rem; border-top: 1px solid var(--ink-main);
+  margin-top: 4rem; padding-top: .9rem; border-top: 1px solid var(--ink-main);
 }
 .bk-list-title { margin: 0; font-size: .8125rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.bk-list-note {
+  margin: 0; font-size: .6875rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+}
 .bk-num { color: var(--muted); font-weight: 600; }
 
 /* ── Everything listed, LGDR-style ─────────────
@@ -231,7 +233,7 @@
 #catalog-grid .catalog-card { min-width: 0; }
 #catalog-grid .card-artist, #catalog-grid .card-title { overflow-wrap: anywhere; }
 
-/* ── Header: keep "Purchase Catalogs" visible on tablets, artist filter on phones ── */
+/* ── Header: keep "Purchase Catalogs" visible on tablets, artist menu on phones ── */
 @media (min-width: 769px) and (max-width: 1100px) {
   .header-inner { gap: 1rem; }
   .nav-link--home { display: none; }
@@ -250,19 +252,18 @@
 @media (max-width: 800px) {
   .bk { --iw: 0px; }
   .bk-info { display: none; }
-  .bk-caption:not([hidden]) { display: block; position: relative; padding-top: .25rem; }
-  .bk-caption .bk-meta { margin-top: .9rem; padding-top: 0; }
+  .bk-caption:not([hidden]) { display: flex; flex-direction: column; align-items: flex-start; position: relative; padding-top: .35rem; }
+  .bk-caption .bk-actions { margin-top: 1.1rem; }
 }
 @media (max-width: 768px) {
-  .bk { padding: 1.75rem 1rem 0; }
+  .bk { padding: 2rem 1rem 0; }
   .header-actions { display: flex; gap: .5rem; }
   .header-actions #artist-filter { display: block; flex: 0 0 42%; min-width: 0; max-width: none; }
   #catalog-grid.catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.25rem 1rem; padding: 1.25rem 1rem 2.5rem; }
 }
 @media (max-width: 639px) {
-  /* the pulled-out cover always fits the screen, down to a 320px phone */
+  /* the open cover always fits the screen with the next strip showing, down to a 320px phone */
   .bk { --h: min(230px, calc((100vw - 2rem - 40px) / var(--ar))); --k: .86; }
-  .bk-head { flex-wrap: wrap; row-gap: .35rem; }
   .bk-intro { font-size: .9375rem; }
   .bk-shelf-wrap { margin-top: 1.5rem; }
   .bk-cover::after { display: none; }
